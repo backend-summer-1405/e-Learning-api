@@ -23,11 +23,14 @@
   "homepage": "https://github.com/backend-summer-1405/e-Learning-api#readme",
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "bcrypt": "^6.0.0",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
+    "express-validator": "^7.3.2",
     "prisma": "^6.19.3"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.4",
     "nodemon": "^3.1.14",
