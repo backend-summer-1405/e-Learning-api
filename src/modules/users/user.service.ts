@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { createUser } from "./user.repository.js";
 
 export const createUserService = async (data: {
+  name: string;
   email: string;
   password?: string;
 }) => {
@@ -12,6 +13,7 @@ export const createUserService = async (data: {
   }
 
   return createUser({
+    name: data.name,
     email: data.email,
     password: hashedPassword,
   });
