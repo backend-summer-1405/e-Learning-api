@@ -1,9 +1,9 @@
-//      <=***************|====I start express project MANI.  
+//      <=***************|====I start express project by MANI.  
 
 
 import express from "express";
 import errorMiddleware from "./middleware/error.middleware.js";
-import userRouter from "./modules/users/ user.routes.js";
+import userRouter from "./modules/users/user.routes.js";
 import authRouter from "./modules/auth/auth.routes.js";
 
 const app = express();

@@ -46,7 +46,7 @@ export const registerService = async (
   if (existingUser) {
     throw new AppError("Email already exists", 409);
   }
-  
+
   const user = await createUserService({
     email,
     name,
