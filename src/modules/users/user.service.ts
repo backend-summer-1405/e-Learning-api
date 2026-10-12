@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
-import { createUser } from "./user.repository.js";
+import AppError from "../../utils/AppError.js";
+import { createUser, findUserById } from "./user.repository.js";
 
 export const createUserService = async (data: {
   name: string;
@@ -17,4 +18,16 @@ export const createUserService = async (data: {
     email: data.email,
     password: hashedPassword,
   });
+};
+
+////////
+
+export const getMeService = async (userId: string) => {
+  const user = await findUserById(userId);
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  return user;
 };
