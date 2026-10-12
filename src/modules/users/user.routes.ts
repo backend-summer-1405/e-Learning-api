@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { createUserController, getMeController } from "./user.controller.js";
-import { createUserValidation } from "./user.validation.js";
+import { createUserController, getMeController, updateMeController } from "./user.controller.js";
+import { createUserValidation, updateMeValidation } from "./user.validation.js";
 import validationMiddleware from "../../middleware/validation.middleware.js";
 import authMiddleware from "../../middleware/auth.middleware.js";
 
@@ -18,5 +18,13 @@ userRouter.get(
   authMiddleware,
   getMeController
 );
+
+userRouter.patch(
+  "/me",
+  authMiddleware,
+  updateMeValidation,
+  validationMiddleware,
+  updateMeController,
+)
 
 export default userRouter;

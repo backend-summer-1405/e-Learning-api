@@ -26,3 +26,26 @@ export const findUserById = async (userId: string) => {
     },
   });
 };
+
+export const updateUser = async(
+  userId : string,
+  data: {
+    name? : string,
+    email?: string,
+  }
+) => {
+    return prisma.user.update({
+      where : {
+        id : userId,
+      },
+      data,
+      select : {
+        id: true,
+        name: true,
+        email: true,
+        role :true,
+        createdAt : true,
+        updatedAt : true,
+      }
+    })
+}

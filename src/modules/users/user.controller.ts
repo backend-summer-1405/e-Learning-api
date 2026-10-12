@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import {
   createUserService,
   getMeService,
+  updateMeService,
 } from "./user.service.js";
 
 export const createUserController = async (
@@ -17,8 +18,6 @@ export const createUserController = async (
   });
 };
 
-
-
 export const getMeController = async (
   req: Request,
   res: Response
@@ -32,3 +31,18 @@ export const getMeController = async (
     message: "User retrieved successfully",
   });
 };
+
+///.  //////
+export const updateMeController = async (
+  req: Request,
+  res: Response,
+) => {
+  const userId = res.locals.userId as string;
+  const user = await updateMeService(userId, req.body);
+
+  return res.status(200).json({
+    success: true,
+    data: user,
+    message: "user updated successfully"
+  })
+}
