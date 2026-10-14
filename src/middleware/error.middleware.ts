@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { Prisma } from "@prisma/client";
+import multer from "multer";
 import AppError from "../utils/AppError.js";
 
 const errorMiddleware = (
@@ -8,7 +9,7 @@ const errorMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  //  custom application errors
+  // custom application errors
   if (error instanceof AppError) {
     return res.status(error.statusCode).json({
       success: false,
@@ -16,7 +17,43 @@ const errorMiddleware = (
     });
   }
 
-  //  prisam known request error
+  // Multer upload errors
+  if (error instanceof multer.MulterError) {
+    switch (error.code) {
+      // File size limit exceeded
+      case "LIMIT_FILE_SIZE":
+        return res.status(413).json({
+          success: false,
+          message: "Each image must be 5 MB or smaller",
+        });
+
+      // Too many files or unexpected file field
+      case "LIMIT_FILE_COUNT":
+      case "LIMIT_UNEXPECTED_FILE":
+        return res.status(400).json({
+          success: false,
+          message: "You can upload a maximum of 5 images",
+        });
+
+      // Invalid multipart form data
+      case "LIMIT_PART_COUNT":
+      case "LIMIT_FIELD_COUNT":
+      case "LIMIT_FIELD_KEY":
+      case "LIMIT_FIELD_VALUE":
+        return res.status(400).json({
+          success: false,
+          message: "Invalid multipart form data",
+        });
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: "Image upload failed",
+        });
+    }
+  }
+
+  // Prisma known request errors
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     switch (error.code) {
       // Unique constraint violation
@@ -26,7 +63,7 @@ const errorMiddleware = (
           message: "A record with this value already exists",
         });
 
-      // record required for an operation was not found
+      // Record required for an operation was not found
       case "P2025":
         return res.status(404).json({
           success: false,
@@ -50,7 +87,7 @@ const errorMiddleware = (
     }
   }
 
-  //  Unexpected error
+  // Unexpected errors
   console.error(error);
 
   return res.status(500).json({

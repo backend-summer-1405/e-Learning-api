@@ -38,11 +38,15 @@ model Account {
   images AccountImage[]
 }
 
+
 model AccountImage {
   id        String   @id @default(uuid())
   url       String
+  isPrimary Boolean  @default(false)
   accountId String
   createdAt DateTime @default(now())
 
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, isPrimary])
 }
