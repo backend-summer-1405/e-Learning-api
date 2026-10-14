@@ -3,6 +3,7 @@ import {
   createUserService,
   getMeService,
   updateMeService,
+  changePasswordService,
 } from "./user.service.js";
 
 export const createUserController = async (
@@ -45,4 +46,24 @@ export const updateMeController = async (
     data: user,
     message: "user updated successfully"
   })
+}
+
+////// change pass
+export const changePasswordController = async (
+  req: Request,
+  res: Response,
+) => {
+  const userId = await res.locals.userId as string;
+  const { currentPassword, newPassword } = req.body;
+  await changePasswordService(
+    userId,
+    currentPassword,
+    newPassword
+  );
+
+  return res.status(200).json({
+    success : true,
+    message : "password changed successfully"
+  })
+
 }

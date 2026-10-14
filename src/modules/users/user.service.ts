@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import AppError from "../../utils/AppError.js";
-import { createUser, findUserById, updateUser } from "./user.repository.js";
+import { createUser, findUserById, updateUser, findUserPasswordById, updateUserPassword } from "./user.repository.js";
+import prisma from "../../config/prisma.js";
 
 export const createUserService = async (data: {
   name: string;
@@ -42,7 +43,7 @@ export const updateMeService = async (
   const user = await findUserById(userId);
 
   if (!user) {
-    throw new AppError("user not found", 404);
+    throw new AppError("user not found", 404)
   }
 
   if (data.name !== undefined && data.name.trim() === "") {
@@ -59,4 +60,41 @@ export const updateMeService = async (
     ...(data.email !== undefined && { email: data.email.trim().toLowerCase() }),
   })
 
+}
+///////====
+export const changePasswordService = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) => {
+  const user = await findUserPasswordById(userId);
+
+  if (!user) {
+    throw new AppError("User not found", 404)
+  }
+
+  if (!user.password) {
+    throw new AppError("This account does not have a password", 400)
+  }
+
+  const isPasswordValid = await bcrypt.compare(
+    currentPassword,
+    user.password,
+  );
+
+  if (!isPasswordValid) {
+    throw new AppError("Current password is incorrect", 400);
+  }
+
+  const isSamePassword = await bcrypt.compare(
+    newPassword,
+    user.password
+  );
+
+  if (!isSamePassword) {
+    throw new AppError("New password must be different from current password", 400);
+  }
+
+  const hashpassword = await bcrypt.hash(newPassword, 12);
+  await updateUserPassword(userId, hashpassword);
 }

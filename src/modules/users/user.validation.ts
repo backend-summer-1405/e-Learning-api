@@ -25,3 +25,17 @@ export const updateMeValidation = [
     .withMessage("Invalid email")
     .normalizeEmail(),
 ];
+
+export const changePasswordValidation = [
+  body("currentPassword")
+    .isString()
+    .withMessage("Current password must be a string")
+    .notEmpty()
+    .withMessage("Current password is required"),
+
+  body("newPassword")
+    .isString()
+    .withMessage("New password must be a string")
+    .isLength({ min: 8 })
+    .withMessage("New password must be at least 8 characters long"),
+];

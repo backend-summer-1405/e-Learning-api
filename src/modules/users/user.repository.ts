@@ -49,3 +49,29 @@ export const updateUser = async(
       }
     })
 }
+/////////// for change password
+export const findUserPasswordById = async (userId: string) => {
+  return prisma.user.findUnique({
+    where : {
+      id : userId,
+    },
+    select : {
+      id : true,
+      password : true,
+    },
+  })
+}
+
+export const updateUserPassword = async (
+  userId : string,
+  hashedPassword : string
+) => {
+  return prisma.user.update({
+    where : {
+      id : userId,
+    },
+    data : {
+      password : hashedPassword,
+    }
+  })
+}
