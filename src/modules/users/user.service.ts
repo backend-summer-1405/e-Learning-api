@@ -51,7 +51,7 @@ export const updateMeService = async (
   }
 
   if (data.email !== undefined && data.email.trim() === "") {
-    throw new AppError("Name cannot be empty", 400)
+    throw new AppError("Email cannot be empty", 400)
   }
 
 
