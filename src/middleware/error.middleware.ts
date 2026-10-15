@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { Prisma } from "@prisma/client";
 import multer from "multer";
 import AppError from "../utils/AppError.js";
+import logger from "../config/logger.js";
 
 const errorMiddleware = (
   error: Error,
@@ -78,7 +79,13 @@ const errorMiddleware = (
         });
 
       default:
-        console.error("Prisma error:", error);
+        logger.error("Unhandled Prisma error", {
+          errorCode: error.code,
+          message: error.message,
+          stack: error.stack,
+          path: req.originalUrl,
+          method: req.method,
+        });
 
         return res.status(500).json({
           success: false,
@@ -88,7 +95,12 @@ const errorMiddleware = (
   }
 
   // Unexpected errors
-  console.error(error);
+  logger.error("Unexpected server error", {
+    message: error.message,
+    stack: error.stack,
+    path: req.originalUrl,
+    method: req.method,
+  });
 
   return res.status(500).json({
     success: false,
@@ -97,3 +109,4 @@ const errorMiddleware = (
 };
 
 export default errorMiddleware;
+

@@ -6,6 +6,7 @@ import errorMiddleware from "./middleware/error.middleware.js";
 import userRouter from "./modules/users/user.routes.js";
 import authRouter from "./modules/auth/auth.routes.js";
 import accountRouter from "./modules/accounts/account.routes.js";
+import reactionRouter from "./modules/reactions/reaction.routes.js";
 
 const app = express();
 
@@ -15,7 +16,7 @@ app.use(express.json());
 app.use("/api/auth", authRouter)
 app.use("/api/users", userRouter);
 app.use("/apiccount", accountRouter)
-
+app.use('/api/reactions', reactionRouter)
 
 ////
 
