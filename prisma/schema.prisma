@@ -13,6 +13,17 @@ enum Role {
   ADMIN
 }
 
+enum ReactionType {
+  LIKE
+  DISLIKE
+}
+
+enum ReactableType {
+  NEWS
+  COURSE
+  PODCAST
+}
+
 model User {
   id        String   @id @default(uuid())
   name      String
@@ -49,4 +60,18 @@ model AccountImage {
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId, isPrimary])
+}
+
+model Reaction {
+  id         String         @id @default(uuid())
+  userId     String
+  targetId   String
+  targetType ReactableType
+  type       ReactionType
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@index([userId])
 }
