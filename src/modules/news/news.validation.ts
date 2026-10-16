@@ -19,3 +19,9 @@ export const newsIdValidation = [
     .isUUID()
     .withMessage("Invalid news ID"),
 ];
+
+export const newsImageIdValidation = [
+  param("imageId")
+    .isUUID()
+    .withMessage("Invalid news image ID"),
+];
