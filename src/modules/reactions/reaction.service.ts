@@ -1,13 +1,37 @@
 import logger from "../../config/logger.js";
 import AppError from "../../utils/AppError.js";
 import { reactionRepository } from "./reaction.repository.js";
-import type { CreateReactionInput, } from "./reaction.types.js";
+import { reactionTargetRepository } from "./reaction-target.repository.js";
+import type { CreateReactionInput } from "./reaction.types.js";
 
 export const reactionService = () => {
+    const validateTarget = async (
+        targetType: CreateReactionInput["targetType"],
+        targetId: string,
+    ) => {
+        if (targetType !== "NEWS") {
+            throw new AppError(
+                `${targetType} module is not implemented yet`,
+                404,
+            );
+        }
+
+        const targetExists = await reactionTargetRepository.exists(
+            targetType,
+            targetId,
+        );
+
+        if (!targetExists) {
+            throw new AppError("News not found", 404);
+        }
+    };
+
     const setReaction = async (
         userId: string,
         input: Omit<CreateReactionInput, "userId">,
     ) => {
+        await validateTarget(input.targetType, input.targetId);
+
         const existingReaction =
             await reactionRepository.findByUserAndTarget(
                 userId,
@@ -35,7 +59,10 @@ export const reactionService = () => {
             return existingReaction;
         }
 
-        const reaction = await reactionRepository.update(existingReaction.id, input.type   );
+        const reaction = await reactionRepository.update(
+            existingReaction.id,
+            input.type,
+        );
 
         logger.info("Reaction updated successfully", {
             userId,
@@ -53,6 +80,8 @@ export const reactionService = () => {
         targetType: CreateReactionInput["targetType"],
         targetId: string,
     ) => {
+        await validateTarget(targetType, targetId);
+
         const existingReaction =
             await reactionRepository.findByUserAndTarget(
                 userId,
@@ -80,13 +109,16 @@ export const reactionService = () => {
         targetType: CreateReactionInput["targetType"],
         targetId: string,
     ) => {
+        await validateTarget(targetType, targetId);
+
         const counts = await reactionRepository.countByTarget(
             targetType,
             targetId,
         );
 
         return {
-            likes: counts.find((item) => item.type === "LIKE")?._count._all ?? 0,
+            likes:
+                counts.find((item) => item.type === "LIKE")?._count._all ?? 0,
             dislikes:
                 counts.find((item) => item.type === "DISLIKE")?._count._all ?? 0,
         };
