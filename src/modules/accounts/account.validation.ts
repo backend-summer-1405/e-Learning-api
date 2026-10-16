@@ -56,3 +56,9 @@ export const accountIdValidation = [
     .isUUID()
     .withMessage("Invalid account ID"),
 ];
+
+export const imageIdValidation = [
+  param("imageId")
+    .isUUID()
+    .withMessage("Image ID must be a valid UUID"),
+];

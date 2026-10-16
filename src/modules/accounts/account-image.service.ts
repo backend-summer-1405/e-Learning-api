@@ -40,7 +40,7 @@ export const uploadAccountImagesService = async (
     }
 
     try {
-       
+
         const account = await import("./account.repository.js").then(
             ({ findAccountById }) => findAccountById(accountId),
         );
@@ -49,7 +49,7 @@ export const uploadAccountImagesService = async (
             throw new AppError("Account not found", 404);
         }
 
-       
+
         await createAccountImages(
             accountId,
             files.map((file) => file.filename),
@@ -82,46 +82,47 @@ export const deleteAccountImageService = async (
     );
 
     if (!image) {
-        throw new AppError("Image not found", 404)
+        throw new AppError("Image not found", 404);
     }
 
     const imagePath = getStoredImagePath(image.url);
-    const deletedImage = await deleteAccountImage(imageId)
 
     try {
         await fs.unlink(imagePath);
     } catch (error) {
         const fileError = error as NodeJS.ErrnoException;
 
-        if (fileError.code === "ENOENT") {
-            console.warn(
-                `Image file was already missing: ${imagePath}`,
-            );
-        } else {
+        if (fileError.code !== "ENOENT") {
             console.error(
                 `Failed to delete image file: ${imagePath}`,
                 error,
             );
+
+            throw new AppError("Failed to delete image file", 500);
         }
+
+        console.warn(`Image file was already missing: ${imagePath}`);
     }
 
-    return deletedImage;
+    return deleteAccountImage(imageId);
 };
 
+
+
 export const setPrimaryAccountImageService = async (
-  userId: string,
-  accountId: string,
-  imageId: string,
+    userId: string,
+    accountId: string,
+    imageId: string,
 ) => {
-  const image = await findAccountImageById(
-    userId,
-    accountId,
-    imageId,
-  );
+    const image = await findAccountImageById(
+        userId,
+        accountId,
+        imageId,
+    );
 
-  if (!image) {
-    throw new AppError("Image not found", 404);
-  }
+    if (!image) {
+        throw new AppError("Image not found", 404);
+    }
 
-  return setPrimaryAccountImage(accountId, imageId);
+    return setPrimaryAccountImage(accountId, imageId);
 };

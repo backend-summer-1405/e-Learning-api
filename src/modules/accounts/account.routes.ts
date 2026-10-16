@@ -12,6 +12,7 @@ import {
   createAccountValidation,
   updateAccountValidation,
   accountIdValidation,
+  imageIdValidation,
 } from "./account.validation.js";
 
 import {
@@ -83,18 +84,22 @@ accountRouter.patch(
 
 //delete account by id
 accountRouter.delete(
-  "/:accountId",
+  "/:accountId/images/:imageId",
   accountIdValidation,
+  imageIdValidation,
   validationMiddleware,
-  deleteAccountController,
+  deleteAccountImageController,
 );
 
 // chose main image profile
 accountRouter.patch(
   "/:accountId/images/:imageId/primary",
   accountIdValidation,
+  imageIdValidation,
   validationMiddleware,
   setPrimaryAccountImageController,
 );
+
+
 
 export default accountRouter;

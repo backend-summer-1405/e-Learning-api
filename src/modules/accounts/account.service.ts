@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import AppError from "../../utils/AppError.js";
 
 import {
@@ -8,6 +10,8 @@ import {
   findAccountsByUserId,
   updateAccount,
 } from "./account.repository.js";
+
+
 
 export const createAccountService = async (
   userId: string,
@@ -89,17 +93,28 @@ export const deleteAccountService = async (
   userId: string,
   accountId: string,
 ) => {
-  try {
-    return await deleteAccount(userId, accountId);
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      "code" in error &&
-      error.code === "P2025"
-    ) {
-      throw new AppError("Account not found", 404);
-    }
+  // Check account ownership and get its images.
+  const account = await getAccountByIdService(userId, accountId);
+  //
+  const deletedAccount = await deleteAccount(userId, accountId);
 
-    throw error;
+  const uploadDirectory = path.resolve("uploads/accounts");
+
+  const cleanupResults = await Promise.allSettled(
+    account.images.map((image) =>
+      fs.unlink(path.join(uploadDirectory, image.url)),
+    ),
+  );
+
+  const failedDeletions = cleanupResults.filter(
+    (result) => result.status === "rejected",
+  );
+
+  if (failedDeletions.length > 0) {
+    console.error(
+      `Failed to delete ${failedDeletions.length} account image file(s).`,
+    );
   }
+
+  return deletedAccount;
 };
