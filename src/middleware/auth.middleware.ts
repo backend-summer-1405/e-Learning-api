@@ -9,6 +9,7 @@ const authMiddleware = (
 ) => {
     try {
         const authHeader = req.headers.authorization;
+        console.log("AUTH MIDDLEWARE:", authHeader);
 
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             throw new AppError("Authentication required", 401);
