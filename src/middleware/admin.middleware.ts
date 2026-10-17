@@ -9,7 +9,7 @@ const adminMiddleware = async (
 ) => {
   try {
     const userId = res.locals.userId;
-    console.log("ADMIN MIDDLEWARE:", userId);
+    // console.log("ADMIN MIDDLEWARE:", userId);
 
     if (typeof userId !== "string") {
       throw new AppError("Authentication required", 401);

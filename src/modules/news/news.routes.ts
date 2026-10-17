@@ -32,7 +32,7 @@ const newsImageUpload = createUpload({
     "image/png",
     "image/webp",
   ],
-  maxFiles: 5,
+  maxFiles: 10,
   maxFileSize: 5 * 1024 * 1024,
 });
 
@@ -52,7 +52,7 @@ newsRouter.post(
   "/",
   authMiddleware,
   adminMiddleware,
-  newsImageUpload.array("images", 10),
+  newsImageUpload.single("image"),
   createNewsValidation,
   validationMiddleware,
   createNewsController,

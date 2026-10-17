@@ -87,8 +87,6 @@ export const replaceNewsImageService = async (
   try {
     await deleteFile(image.url);
   } catch (error) {
-    // The database already points to the new file.
-    // Log cleanup failure; do not report the update as failed.
     console.error("Failed to delete replaced news image:", error);
   }
 

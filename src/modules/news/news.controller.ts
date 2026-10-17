@@ -9,13 +9,20 @@ import AppError from "../../utils/AppError.js";
 export const createNewsController = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
 ) => {
     try {
-        const news = await createNewsService({
-            title: req.body.title,
-            content: req.body.content,
-        });
+        const imageUrl = req.file
+            ? `uploads/news/${req.file.filename}`
+            : undefined;
+
+        const news = await createNewsService(
+            {
+                title: req.body.title,
+                content: req.body.content,
+            },
+            imageUrl,
+        );
 
         res.status(201).json({
             status: "success",
@@ -61,7 +68,7 @@ export const getNewsByIdController = async (
         }
 
 
-        
+
         const news = await getNewsByIdService(id);
 
         res.status(200).json({

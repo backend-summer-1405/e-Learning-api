@@ -6,8 +6,8 @@ import {
 } from "./news.repository.js";
 import { CreateNewsInput } from "./news.type.js";
 
-export const createNewsService = (data: CreateNewsInput) => {
-  return createNews(data);
+export const createNewsService = (data: CreateNewsInput, imageUrl?: string,) => {
+  return createNews(data, imageUrl);
 };
 
 export const getAllNewsService = () => {
