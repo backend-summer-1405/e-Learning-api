@@ -98,6 +98,12 @@ export const deleteAccount = async (
       username: true,
       name: true,
       userId: true,
+      images: {
+        select: {
+          id: true,
+          url: true,
+        },
+      },
     },
   });
 };

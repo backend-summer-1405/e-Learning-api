@@ -3,6 +3,7 @@ import AppError from "../../utils/AppError.js";
 import { createUser, findUserById, updateUser, findUserPasswordById, updateUserPassword } from "./user.repository.js";
 import prisma from "../../config/prisma.js";
 
+
 export const createUserService = async (data: {
   name: string;
   email: string;
