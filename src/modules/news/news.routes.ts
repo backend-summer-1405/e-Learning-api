@@ -1,14 +1,17 @@
 import { Router } from "express";
 import {
   createNewsController,
+  deleteNewsController,
   getAllNewsController,
   getNewsByIdController,
+  updateNewsController,
 } from "./news.controller.js";
 
 import {
   createNewsValidation,
   newsIdValidation,
   newsImageIdValidation,
+  updateNewsValidation,
 } from "./news.validation.js";
 
 import validationMiddleware from "../../middleware/validation.middleware.js";
@@ -58,6 +61,27 @@ newsRouter.post(
   createNewsController,
 );
 
+newsRouter.patch(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  updateNewsValidation,
+  validationMiddleware,
+  updateNewsController
+);
+
+
+// DELETE News
+newsRouter.delete(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  newsIdValidation,
+  validationMiddleware,
+  deleteNewsController,
+);
+
+
 
 // NEWS IAMGE ROUTES
 
@@ -102,6 +126,7 @@ newsRouter.patch(
   validationMiddleware,
   replaceNewsImageController,
 );
+
 
 
 

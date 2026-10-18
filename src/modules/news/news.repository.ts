@@ -1,44 +1,58 @@
 import { CreateNewsInput } from './news.type.js';
 import prisma from "../../config/prisma.js";
 
-
-
-export const createNews = ( data: CreateNewsInput, imageUrl?: string, ) => {
+export const createNews = (data: CreateNewsInput, imageUrl?: string) => {
   return prisma.news.create({
     data: {
       ...data,
       ...(imageUrl
         ? {
           images: {
-            create: {
-              url: imageUrl,
-            },
+            create: { url: imageUrl },
           },
         }
         : {}),
     },
-    include: {
-      images: true,
-    },
+    include: { images: true },
   });
 };
 
 export const findAllNews = () => {
   return prisma.news.findMany({
-    include: {
-      images: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+    include: { images: true },
+    orderBy: { createdAt: "desc" },
   });
 };
 
 export const findNewsById = (id: string) => {
   return prisma.news.findUnique({
     where: { id },
-    include: {
-      images: true,
+    include: { images: true },
+  });
+};
+
+export const deleteNews = (id: string) => {
+  return prisma.news.delete({
+    where: { id },
+  });
+};
+
+export const updateNews = (
+  id: string,
+  data: { title?: string; content?: string }
+) => {
+  return prisma.news.update({
+    where: { id },
+    data,
+    include: { images: true },
+  });
+};
+
+export const deleteNewsReactions = (newsId: string) => {
+  return prisma.reaction.deleteMany({
+    where: {
+      targetType: "NEWS",
+      targetId: newsId,
     },
   });
 };
