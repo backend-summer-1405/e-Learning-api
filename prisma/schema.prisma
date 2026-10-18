@@ -31,9 +31,26 @@ model User {
   password  String?
   googleId  String?   @unique
   role      Role      @default(USER)
+  avatarUrl String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  
   accounts  Account[]
+  passwordResetTokens PasswordResetToken[]
+  reactions Reaction[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Account {
@@ -70,6 +87,8 @@ model Reaction {
   @@unique([userId, targetType, targetId])
   @@index([targetType, targetId])
   @@index([userId])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
 }
 
 model News {
