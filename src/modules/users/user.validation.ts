@@ -1,10 +1,7 @@
 import { body } from "express-validator";
 
 export const createUserValidation = [
-  body("email")
-    .isEmail()
-    .withMessage("Invalid email"),
-
+  body("email").isEmail().withMessage("Invalid email"),
   body("password")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters"),
@@ -21,9 +18,21 @@ export const updateMeValidation = [
 
   body("email")
     .optional()
+    .trim()
     .isEmail()
-    .withMessage("Invalid email")
-    .normalizeEmail(),
+    .withMessage("Invalid email"),
+
+  body().custom((_, { req }) => {
+    const hasName = req.body.name !== undefined;
+    const hasEmail = req.body.email !== undefined;
+    const hasFile = !!req.file;                       
+    if (!hasName && !hasEmail && !hasFile) {
+      throw new Error(
+        "At least one field (name, email, or avatar) is required"
+      );
+    }
+    return true;
+  }),
 ];
 
 export const changePasswordValidation = [

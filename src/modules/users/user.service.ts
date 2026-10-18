@@ -1,8 +1,15 @@
 import bcrypt from "bcrypt";
+import fs from "node:fs/promises";
+import path from "node:path";
 import AppError from "../../utils/AppError.js";
-import { createUser, findUserById, updateUser, findUserPasswordById, updateUserPassword } from "./user.repository.js";
-import prisma from "../../config/prisma.js";
-
+import {
+  createUser,
+  findUserById,
+  findUserByEmail,
+  updateUser,
+  findUserPasswordById,
+  updateUserPassword,
+} from "./user.repository.js";
 
 export const createUserService = async (data: {
   name: string;
@@ -10,11 +17,13 @@ export const createUserService = async (data: {
   password?: string;
 }) => {
   let hashedPassword: string | undefined;
-
   if (data.password) {
-    hashedPassword = await bcrypt.hash(data.password, 12);
+    hashedPassword = await bcrypt.hash(
+      
+      data.password,
+      12
+    );
   }
-
   return createUser({
     name: data.name,
     email: data.email,
@@ -22,80 +31,105 @@ export const createUserService = async (data: {
   });
 };
 
-////////
 export const getMeService = async (userId: string) => {
   const user = await findUserById(userId);
-
-  if (!user) {
-    throw new AppError("User not found", 404);
-  }
-
+  if (!user) throw new AppError("User not found", 404);
   return user;
 };
 
-//// .....updating
 export const updateMeService = async (
   userId: string,
-  data: {
-    name?: string,
-    email?: string,
-  }
+  data: { name?: string; email?: string },
+  avatarFile?: Express.Multer.File
 ) => {
   const user = await findUserById(userId);
+  if (!user) throw new AppError("User not found", 404);
 
-  if (!user) {
-    throw new AppError("user not found", 404)
+  if (data.name === undefined && data.email === undefined && !avatarFile) {
+    throw new AppError(
+      "At least one field (name, email, or avatar) is required",
+      400
+    );
   }
 
-  if (data.name !== undefined && data.name.trim() === "") {
-    throw new AppError("Name cannot be empty", 400)
+  const updateData: {
+    name?: string;
+    email?: string;
+    avatarUrl?: string;
+
+  } = {};
+
+  // name
+  if (data.name !== undefined) {
+    if (typeof data.name !== "string" || data.name.trim() === "") {
+      throw new AppError("Name cannot be empty", 400);
+    }
+    updateData.name = data.name.trim();
   }
 
-  if (data.email !== undefined && data.email.trim() === "") {
-    throw new AppError("Email cannot be empty", 400)
+  // email
+  if (data.email !== undefined) {
+    if (typeof data.email !== "string") {
+      throw new AppError("Email must be a string", 400);
+    }
+    const normalizedEmail = data.email.trim().toLowerCase();
+    if (normalizedEmail === "") {
+
+
+      throw new AppError("Email cannot be empty", 400);
+    }
+    if (normalizedEmail !== user.email) {
+      const existing = await findUserByEmail(
+        normalizedEmail
+      );
+
+      if (existing) throw new AppError("Email is already in use", 409);
+    }
+    updateData.email = normalizedEmail;
   }
 
 
-  return updateUser(userId, {
-    ...(data.name !== undefined && { name: data.name.trim() }),
-    ...(data.email !== undefined && { email: data.email.trim().toLowerCase() }),
-  })
+  if (avatarFile) {
 
-}
-///////====
+    const avatarUrl = (user as { avatarUrl?: string | null }).avatarUrl;
+    if (avatarUrl) {
+      const oldPath = path.resolve(avatarUrl.replace(/^\//, ""));
+      try {
+        await fs.unlink(oldPath);
+      } catch {
+
+      }
+    }
+    updateData.avatarUrl = `/uploads/users/${avatarFile.filename}`;
+  }
+
+  return updateUser(
+    userId,
+    updateData
+  );
+};
+
 export const changePasswordService = async (
   userId: string,
   currentPassword: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const user = await findUserPasswordById(userId);
+  if (!user) throw new AppError("User not found", 404);
+  if (!user.password) throw new AppError("This account does not have a password", 400);
 
-  if (!user) {
-    throw new AppError("User not found", 404)
-  }
-
-  if (!user.password) {
-    throw new AppError("This account does not have a password", 400)
-  }
-
-  const isPasswordValid = await bcrypt.compare(
-    currentPassword,
-    user.password,
-  );
-
-  if (!isPasswordValid) {
-    throw new AppError("Current password is incorrect", 400);
-  }
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+  if (!isPasswordValid) throw new AppError("Current password is incorrect", 400);
 
   const isSamePassword = await bcrypt.compare(
-    newPassword,
-    user.password
-  );
+    newPassword, user.password
 
-  if (!isSamePassword) {
+
+  );
+  if (isSamePassword) {
     throw new AppError("New password must be different from current password", 400);
   }
 
   const hashpassword = await bcrypt.hash(newPassword, 12);
   await updateUserPassword(userId, hashpassword);
-}
+};

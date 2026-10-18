@@ -36,16 +36,21 @@ export const getMeController = async (
 ///.  //////
 export const updateMeController = async (
   req: Request,
-  res: Response,
+  res: Response
 ) => {
   const userId = res.locals.userId as string;
-  const user = await updateMeService(userId, req.body);
+  const avatarFile = req.file;
+  const user = await updateMeService(
+    userId,
+    req.body,
+    avatarFile
+  )
 
   return res.status(200).json({
     success: true,
     data: user,
-    message: "user updated successfully"
-  })
+    message: "User updated successfully",
+  });
 }
 
 ////// change pass
@@ -62,8 +67,8 @@ export const changePasswordController = async (
   );
 
   return res.status(200).json({
-    success : true,
-    message : "password changed successfully"
+    success: true,
+    message: "password changed successfully"
   })
 
 }

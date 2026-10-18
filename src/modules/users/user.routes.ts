@@ -1,10 +1,27 @@
 import { Router } from "express";
-import { changePasswordController, createUserController, getMeController, updateMeController } from "./user.controller.js";
-import { changePasswordValidation, createUserValidation, updateMeValidation } from "./user.validation.js";
+import {
+  changePasswordController,
+  createUserController,
+  getMeController,
+  updateMeController,
+} from "./user.controller.js";
+import {
+  changePasswordValidation,
+  createUserValidation,
+  updateMeValidation,
+} from "./user.validation.js";
 import validationMiddleware from "../../middleware/validation.middleware.js";
 import authMiddleware from "../../middleware/auth.middleware.js";
+import createUpload from "../../middleware/upload.middleware.js";  
 
 const userRouter = Router();
+
+const avatarUpload = createUpload({
+  destination: "uploads/users",
+  allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  maxFiles: 1,
+  maxFileSize: 5 * 1024 * 1024,
+});
 
 userRouter.post(
   "/",
@@ -22,18 +39,18 @@ userRouter.get(
 userRouter.patch(
   "/me",
   authMiddleware,
+  avatarUpload.single("avatar"),     
   updateMeValidation,
   validationMiddleware,
-  updateMeController,
-)
+  updateMeController
+);
 
 userRouter.patch(
-  "me/password",
+  "/me/password",
   authMiddleware,
   changePasswordValidation,
   validationMiddleware,
-  changePasswordController,
-
+  changePasswordController
 );
 
 export default userRouter;
