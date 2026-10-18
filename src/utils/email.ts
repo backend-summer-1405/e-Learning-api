@@ -1,36 +1,49 @@
 import nodemailer from "nodemailer";
 
+const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+const smtpPort = Number(process.env.SMTP_PORT) || 587;
+const smtpUser = process.env.SMTP_USER;
+const smtpPass = process.env.SMTP_PASS;
+const smtpFrom = process.env.SMTP_FROM || smtpUser;
+
+if (!smtpUser || !smtpPass) {
+  throw new Error("SMTP_USER and SMTP_PASS must be configured");
+}
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false, 
+  host: smtpHost,
+  port: smtpPort,
+  secure: smtpPort === 465,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: smtpUser,
+    pass: smtpPass,
   },
 });
 
 export const sendPasswordResetEmail = async (
   to: string,
   resetLink: string
-) => {
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2>بازیابی رمز عبور</h2>
-      <p>برای تنظیم رمز عبور جدید، روی دکمه زیر کلیک کنید:</p>
-      <a href="${resetLink}" 
-         style="display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">
-        تنظیم رمز عبور جدید
-      </a>
-      <p style="color: #666; font-size: 14px;">این لینک تا ۱ ساعت دیگه منقضی می‌شه.</p>
-      <p style="color: #666; font-size: 14px;">اگه شما این درخواست رو نداده‌اید، این ایمیل رو نادیده بگیرید.</p>
-    </div>
-  `;
-
+): Promise<void> => {
   await transporter.sendMail({
-    from: `"E-Learning" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    from: `"E-Learning" <${smtpFrom}>`,
     to,
     subject: "بازیابی رمز عبور",
-    html,
+    text: `
+سلام،
+
+برای تنظیم رمز عبور جدید، لینک زیر را باز کنید:
+
+${resetLink}
+
+این لینک تا یک ساعت معتبر است.
+
+اگر شما درخواست بازیابی رمز عبور نداده‌اید، این ایمیل را نادیده بگیرید.
+
+تیم support-site
+    `.trim(),
   });
+};
+
+export const verifyEmailConnection = async (): Promise<void> => {
+  await transporter.verify();
 };
