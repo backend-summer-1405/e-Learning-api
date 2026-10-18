@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-
+    "types": ["node"], 
     "rootDir": "./src",
     "outDir": "./dist",
 
@@ -13,6 +13,6 @@
 
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts" ,"src/test-email.ts"],
   "exclude": ["node_modules", "dist"]
 }
