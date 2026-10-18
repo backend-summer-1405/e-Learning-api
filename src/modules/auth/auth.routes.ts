@@ -1,13 +1,17 @@
 import { Router } from "express";
 import {
-  loginController,
   registerController,
+  loginController,
   googleAuthController,
+  forgotPasswordController,
+  resetPasswordController,
 } from "./auth.controller.js";
 
 import {
-  loginValidation,
   registerValidation,
+  loginValidation,
+  forgotPasswordValidation,
+  resetPasswordValidation,
 } from "./auth.validation.js";
 
 import validationMiddleware from "../../middleware/validation.middleware.js";
@@ -28,9 +32,21 @@ authRouter.post(
   loginController
 );
 
+authRouter.post("/google", googleAuthController);
+
 authRouter.post(
-  "/google",
-  googleAuthController
-)
+  "/forgot-password",
+  forgotPasswordValidation,
+  validationMiddleware,
+  forgotPasswordController
+);
+
+authRouter.post(
+  "/reset-password",
+  resetPasswordValidation,
+  validationMiddleware,
+  
+  resetPasswordController
+);
 
 export default authRouter;

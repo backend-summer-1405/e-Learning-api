@@ -1,45 +1,104 @@
 import prisma from "../../config/prisma.js";
 
-export const findUserByEmail = (email: string) => {
+
+export const findUserByEmail = async (email: string) => {
   return prisma.user.findUnique({
-    where: {
-      email,
+    where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      password: true,
+      role: true,
+
+      avatarUrl: true,
+      googleId: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 };
 
-export const findUserByGoogleId = (googleId: string) => {
-  return prisma.user.findUnique({
-    where: {
-      googleId,
-    },
-  });
-};
-
-export const createGoogleUser = (data: {
+export const createUser = async (data: {
   name: string;
   email: string;
-  googleId: string;
+  password?: string;
 }) => {
+
+
   return prisma.user.create({
-    data: {
-      name: data.name,
-      email: data.email,
-      googleId: data.googleId,
+    data,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      avatarUrl: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 };
 
-export const linkGoogleAccount = (
+
+export const createPasswordResetToken = async (
   userId: string,
-  googleId: string
+  token: string,
+  expiresAt: Date
+) => {
+  return prisma.passwordResetToken.create({
+    data: {
+      userId,
+      token,
+      expiresAt
+    },
+  });
+};
+
+export const findPasswordResetToken = async (
+  token: string
+) => {
+  return prisma.passwordResetToken.findUnique({
+    where: {
+      token
+    },
+    include: {
+      user: true
+    },
+  });
+};
+
+export const markPasswordResetTokenAsUsed = async (
+  id: string
+) => {
+  return prisma.passwordResetToken.update({
+    where: { id },
+    data: { usedAt: new Date() },
+  });
+};
+
+export const updateUserPassword = async (
+  userId: string,
+  hashedPassword: string
 ) => {
   return prisma.user.update({
     where: {
-      id: userId,
+      id: userId
+
     },
     data: {
-      googleId,
+      password: hashedPassword
+    },
+  });
+};
+
+export const deleteUserPasswordResetTokens = async (
+  userId: string
+) => {
+  return prisma.passwordResetToken.deleteMany({
+    where: {
+      userId
+    
     },
   });
 };
