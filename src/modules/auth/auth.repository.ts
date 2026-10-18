@@ -1,5 +1,5 @@
 import prisma from "../../config/prisma.js";
-
+import type { CreateUserData, PasswordResetTokenData } from "./auth.types.js";
 
 export const findUserByEmail = async (email: string) => {
   return prisma.user.findUnique({
@@ -10,7 +10,6 @@ export const findUserByEmail = async (email: string) => {
       email: true,
       password: true,
       role: true,
-
       avatarUrl: true,
       googleId: true,
       createdAt: true,
@@ -19,13 +18,7 @@ export const findUserByEmail = async (email: string) => {
   });
 };
 
-export const createUser = async (data: {
-  name: string;
-  email: string;
-  password?: string;
-}) => {
-
-
+export const createUser = async (data: CreateUserData) => {
   return prisma.user.create({
     data,
     select: {
@@ -34,43 +27,34 @@ export const createUser = async (data: {
       email: true,
       role: true,
       avatarUrl: true,
+      googleId: true,
       createdAt: true,
       updatedAt: true,
     },
   });
 };
 
+export const updateUserGoogleId = async (userId: string, googleId: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { googleId },
+  });
+};
 
-export const createPasswordResetToken = async (
-  userId: string,
-  token: string,
-  expiresAt: Date
-) => {
+export const createPasswordResetToken = async (data: PasswordResetTokenData) => {
   return prisma.passwordResetToken.create({
-    data: {
-      userId,
-      token,
-      expiresAt
-    },
+    data,
   });
 };
 
-export const findPasswordResetToken = async (
-  token: string
-) => {
+export const findPasswordResetToken = async (token: string) => {
   return prisma.passwordResetToken.findUnique({
-    where: {
-      token
-    },
-    include: {
-      user: true
-    },
+    where: { token },
+    include: { user: true },
   });
 };
 
-export const markPasswordResetTokenAsUsed = async (
-  id: string
-) => {
+export const markPasswordResetTokenAsUsed = async (id: string) => {
   return prisma.passwordResetToken.update({
     where: { id },
     data: { usedAt: new Date() },
@@ -82,23 +66,13 @@ export const updateUserPassword = async (
   hashedPassword: string
 ) => {
   return prisma.user.update({
-    where: {
-      id: userId
-
-    },
-    data: {
-      password: hashedPassword
-    },
+    where: { id: userId },
+    data: { password: hashedPassword },
   });
 };
 
-export const deleteUserPasswordResetTokens = async (
-  userId: string
-) => {
+export const deleteUserPasswordResetTokens = async (userId: string) => {
   return prisma.passwordResetToken.deleteMany({
-    where: {
-      userId
-    
-    },
+    where: { userId },
   });
 };

@@ -1,11 +1,15 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
+
 import AppError from "../../utils/AppError.js";
 import { sendPasswordResetEmail } from "../../utils/email.js";
+
 import {
   findUserByEmail,
   createUser,
+  updateUserGoogleId,
   createPasswordResetToken,
   findPasswordResetToken,
   markPasswordResetTokenAsUsed,
@@ -13,6 +17,14 @@ import {
   deleteUserPasswordResetTokens,
 } from "./auth.repository.js";
 
+import type {
+  RegisterInput,
+  LoginInput,
+  GoogleAuthInput,
+  AuthUser,
+  AuthResult,
+  LoginResult,
+} from "./auth.types.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -20,26 +32,20 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not configured");
 }
 
-const generateToken = (
-  userId: string,
-  rememberMe: boolean = false
-): string => {
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+
+if (!GOOGLE_CLIENT_ID) {
+  throw new Error("GOOGLE_CLIENT_ID is not configured");
+}
+
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+const generateToken = (userId: string, rememberMe: boolean = false): string => {
   const expiresIn = rememberMe ? "7d" : "1d";
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn });
 };
 
-const sanitizeUser = (user: {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatarUrl?: string | null;
-  createdAt?: Date;
-  updatedAt?: Date;
-
-}) => ({
-
-
+const sanitizeUser = (user: AuthUser): AuthUser => ({
   id: user.id,
   name: user.name,
   email: user.email,
@@ -49,176 +55,201 @@ const sanitizeUser = (user: {
   updatedAt: user.updatedAt,
 });
 
-
-export const registerService = async (data: {
-  name: string;
-  email: string;
-  password?: string;
-}) => {
-  const normalizedEmail = data.email.trim().toLowerCase();
-
-  const existing = await findUserByEmail(normalizedEmail);
-
-  if (existing) {
-
-    throw new AppError("Email is already in use", 409);
-  }
-
-  let hashedPassword: string | undefined;
-  if (data.password) {
-    hashedPassword = await bcrypt.hash(data.password, 12);
-  }
-
-  const user = await createUser({
-    name: data.name.trim(),
-    email: normalizedEmail,
-    password: hashedPassword,
-  });
-
-  const token = generateToken(user.id);
-
-  return {
-    user: sanitizeUser(user),
-    token,
-  };
-};
-
-
-export const loginService = async (
-  data: {
-    email: string;
-    password: string;
-    rememberMe?: boolean;
-  }) => {
-  const normalizedEmail = data.email.trim();
-
-
-  const user = await findUserByEmail(normalizedEmail);
-
-
-  if (!user) {
-    throw new AppError("Invalid email or password", 401);
-  }
-
-  if (!user.password) {
-    throw new AppError(
-      "This account was created with Google.",
-      400
-    );
-  }
-
-  const isPasswordValid = await bcrypt.compare(
-    data.password,
-    user.password
-  );
-
-  if (!isPasswordValid) {
-    throw new AppError("Invalid email or password", 401);
-  }
-
-
-  const token = generateToken(
-    user.id,
-    data.rememberMe ?? false
-  );
-
-  return {
-    user: sanitizeUser(user),
-    token,
-    rememberMe: data.rememberMe ?? false,
-  };
-};
-
-
-export const googleAuthService = async (
-  data: {
-    idToken: string
-  }
-
-) => {
-
-
-  throw new AppError("Google auth not implemented yet", 501);
-};
-
-
-export const forgotPasswordService = async (
-  email: string
-) => {
-  const normalizedEmail = email.trim().toLowerCase();
-
-  const user = await findUserByEmail(
-    normalizedEmail
-  )
-
-  if (!user) {
-    return {
-      success: true
-
-    }
-  }
-
-
-  await deleteUserPasswordResetTokens(user.id);
-
-
-  const token = crypto.randomBytes(32).toString("hex");
-
-
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-  await createPasswordResetToken(
-    user.id,
-    token,
-    expiresAt
-  );
-
-  const resetLink =
-    `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
+export const registerService = async (data: RegisterInput): Promise<AuthResult> => {
   try {
-    await sendPasswordResetEmail(
-      user.email, resetLink
-    );
+    const normalizedEmail = data.email.trim().toLowerCase();
+
+    const existingUser = await findUserByEmail(normalizedEmail);
+
+    if (existingUser) {
+      throw new AppError("Email is already in use", 409);
+    }
+
+    const hashedPassword = data.password
+      ? await bcrypt.hash(data.password, 12)
+      : undefined;
+
+    const user = await createUser({
+      name: data.name.trim(),
+      email: normalizedEmail,
+      password: hashedPassword,
+    });
+
+    const token = generateToken(user.id);
+
+    return {
+      user: sanitizeUser(user),
+      token,
+    };
   } catch (error) {
-    console.error("Failed to send reset email:", error)
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw error;
   }
-
-
-
-  return {
-    success: true
-  };
 };
 
+export const loginService = async (data: LoginInput): Promise<LoginResult> => {
+  try {
+    const normalizedEmail = data.email.trim().toLowerCase();
+
+    const user = await findUserByEmail(normalizedEmail);
+
+    if (!user) {
+      throw new AppError("Invalid email or password", 401);
+    }
+
+    if (!user.password) {
+      throw new AppError("This account was created with Google.", 400);
+    }
+
+    const isPasswordValid = await bcrypt.compare(data.password, user.password);
+
+    if (!isPasswordValid) {
+      throw new AppError("Invalid email or password", 401);
+    }
+
+    const rememberMe = data.rememberMe ?? false;
+    const token = generateToken(user.id, rememberMe);
+
+    return {
+      user: sanitizeUser(user),
+      token,
+      rememberMe,
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw error;
+  }
+};
+
+export const googleAuthService = 
+    async (data: GoogleAuthInput): Promise<AuthResult>  => {
+  try {
+    let payload;
+
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: data.idToken,
+        audience: GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch {
+      throw new AppError("Invalid Google token", 401);
+    }
+
+    if (!payload || !payload.email) {
+      throw new AppError("Invalid Google token payload", 400);
+    }
+
+    const { email, name, picture, sub: googleId } = payload;
+    const normalizedEmail = email.toLowerCase();
+
+    const existingUser = await findUserByEmail(normalizedEmail);
+
+    if (existingUser) {
+      if (!existingUser.googleId) {
+        await updateUserGoogleId(existingUser.id, googleId);
+      }
+    } else {
+      await createUser({
+        name: name || "Google User",
+        email: normalizedEmail,
+        googleId,
+        avatarUrl: picture || null,
+      });
+    }
+
+    const user = await findUserByEmail(normalizedEmail);
+
+    if (!user) {
+      throw new AppError("Failed to create or find user", 500);
+    }
+
+    const token = generateToken(user.id);
+
+    return {
+      user: sanitizeUser(user),
+      token,
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw error;
+  }
+};
+
+export const forgotPasswordService = async (email: string) => {
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await findUserByEmail(normalizedEmail);
+
+    if (!user) {
+      return { success: true };
+    }
+
+    await deleteUserPasswordResetTokens(user.id);
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    // ★ این خط رو عوض کن
+    await createPasswordResetToken({
+      userId: user.id,
+      token,
+      expiresAt,
+    });
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+    try {
+      await sendPasswordResetEmail(user.email, resetLink);
+    } catch (error) {
+      console.error("Failed to send reset email:", error);
+    }
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw error;
+  }
+};
 
 export const resetPasswordService = async (
   token: string,
   newPassword: string
 ) => {
-  const resetToken = await findPasswordResetToken(token);
+  try {
+    const resetToken = await findPasswordResetToken(token);
 
+    if (!resetToken) {
+      throw new AppError("Invalid or expired reset token", 400);
+    }
 
+    if (resetToken.usedAt) {
+      throw new AppError("This reset token has already been used", 400);
+    }
 
+    if (resetToken.expiresAt < new Date()) {
+      throw new AppError("Reset token has expired", 400);
+    }
 
-  if (!resetToken) {
-    throw new AppError("Invalid or expired reset token", 400);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    await updateUserPassword(resetToken.userId, hashedPassword);
+    await markPasswordResetTokenAsUsed(resetToken.id);
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw error;
   }
-
-  if (resetToken.usedAt) {
-
-    throw new AppError("This reset token has already been used", 400);
-
-  }
-
-  if (resetToken.expiresAt < new Date()) {
-
-
-    throw new AppError("Reset token has expired", 400);
-  }
-
-  const hashedPassword = await bcrypt.hash(newPassword, 12);
-  await updateUserPassword(resetToken.userId, hashedPassword);
-  await markPasswordResetTokenAsUsed(resetToken.id);
-
-  return { success: true };
 };
