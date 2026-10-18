@@ -12,6 +12,7 @@ import {
   loginValidation,
   forgotPasswordValidation,
   resetPasswordValidation,
+  googleAuthValidation,
 } from "./auth.validation.js";
 
 import validationMiddleware from "../../middleware/validation.middleware.js";
@@ -32,7 +33,12 @@ authRouter.post(
   loginController
 );
 
-authRouter.post("/google", googleAuthController);
+authRouter.post(
+  "/google",
+  googleAuthValidation,
+  validationMiddleware,
+  googleAuthController
+);
 
 authRouter.post(
   "/forgot-password",
@@ -45,7 +51,7 @@ authRouter.post(
   "/reset-password",
   resetPasswordValidation,
   validationMiddleware,
-  
+
   resetPasswordController
 );
 

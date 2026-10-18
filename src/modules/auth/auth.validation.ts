@@ -27,7 +27,7 @@ export const loginValidation = [
   body("email")
     .isEmail()
     .withMessage("Invalid email"),
-    
+
 
   body("password")
     .isString()
@@ -42,14 +42,19 @@ export const loginValidation = [
     .toBoolean(),
 ];
 
+export const googleAuthValidation = [
+  body("idToken")
+    .isString()
+    .withMessage("idToken must be a string")
+    .notEmpty()
+    .withMessage("idToken is required"),
+];
+
 export const forgotPasswordValidation = [
   body("email")
+    .rtrim()
     .isEmail()
     .withMessage("Invalid email")
-    .normalizeEmail({
-      gmail_remove_dots: false,
-      gmail_remove_subaddress: false,
-    }),
 ];
 
 export const resetPasswordValidation = [
