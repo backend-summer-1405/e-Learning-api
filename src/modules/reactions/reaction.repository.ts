@@ -6,11 +6,11 @@ import {
 } from "./reaction.types.js";
 
 export const reactionRepository = {
-  findByUserAndTarget(
+  findByUserAndTarget: (
     userId: string,
     targetType: ReactionTargetType,
     targetId: string,
-  ) {
+  ) => {
     return prisma.reaction.findUnique({
       where: {
         userId_targetType_targetId: {
@@ -22,29 +22,29 @@ export const reactionRepository = {
     });
   },
 
-  create(data: CreateReactionInput) {
+  create: (data: CreateReactionInput) => {
     return prisma.reaction.create({
       data,
     });
   },
 
-  update(id: string, type: ReactionActionType) {
+  update: (id: string, type: ReactionActionType) => {
     return prisma.reaction.update({
       where: { id },
       data: { type },
     });
   },
 
-  delete(id: string) {
+  delete: (id: string) => {
     return prisma.reaction.delete({
       where: { id },
     });
   },
 
-  countByTarget(
+  countByTarget: (
     targetType: ReactionTargetType,
     targetId: string,
-  ) {
+  ) => {
     return prisma.reaction.groupBy({
       by: ["type"],
       where: {
