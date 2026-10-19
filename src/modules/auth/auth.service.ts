@@ -125,62 +125,62 @@ export const loginService = async (data: LoginInput): Promise<LoginResult> => {
   }
 };
 
-export const googleAuthService = 
-    async (data: GoogleAuthInput): Promise<AuthResult>  => {
-  try {
-    let payload;
-
+export const googleAuthService =
+  async (data: GoogleAuthInput): Promise<AuthResult> => {
     try {
-      const ticket = await googleClient.verifyIdToken({
-        idToken: data.idToken,
-        audience: GOOGLE_CLIENT_ID,
-      });
-      payload = ticket.getPayload();
-    } catch {
-      throw new AppError("Invalid Google token", 401);
-    }
+      let payload;
 
-    if (!payload || !payload.email) {
-      throw new AppError("Invalid Google token payload", 400);
-    }
-
-    const { email, name, picture, sub: googleId } = payload;
-    const normalizedEmail = email.toLowerCase();
-
-    const existingUser = await findUserByEmail(normalizedEmail);
-
-    if (existingUser) {
-      if (!existingUser.googleId) {
-        await updateUserGoogleId(existingUser.id, googleId);
+      try {
+        const ticket = await googleClient.verifyIdToken({
+          idToken: data.idToken,
+          audience: GOOGLE_CLIENT_ID,
+        });
+        payload = ticket.getPayload();
+      } catch {
+        throw new AppError("Invalid Google token", 401);
       }
-    } else {
-      await createUser({
-        name: name || "Google User",
-        email: normalizedEmail,
-        googleId,
-        avatarUrl: picture || null,
-      });
-    }
 
-    const user = await findUserByEmail(normalizedEmail);
+      if (!payload || !payload.email) {
+        throw new AppError("Invalid Google token payload", 400);
+      }
 
-    if (!user) {
-      throw new AppError("Failed to create or find user", 500);
-    }
+      const { email, name, picture, sub: googleId } = payload;
+      const normalizedEmail = email.toLowerCase();
 
-    const token = generateToken(user.id);
+      const existingUser = await findUserByEmail(normalizedEmail);
 
-    return {
-      user: sanitizeUser(user),
-      token,
-    };
-  } catch (error) {
-    if (error instanceof AppError) {
+      if (existingUser) {
+        if (!existingUser.googleId) {
+          await updateUserGoogleId(existingUser.id, googleId);
+        }
+      } else {
+        await createUser({
+          name: name || "Google User",
+          email: normalizedEmail,
+          googleId,
+          avatarUrl: picture || null,
+        });
+      }
+
+      const user = await findUserByEmail(normalizedEmail);
+
+      if (!user) {
+        throw new AppError("Failed to create or find user", 500);
+      }
+
+      const token = generateToken(user.id);
+
+      return {
+        user: sanitizeUser(user),
+        token,
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
       throw error;
     }
-    throw error;
-  }
-};
+  };
 
 export const forgotPasswordService = async (email: string) => {
   try {
@@ -197,7 +197,6 @@ export const forgotPasswordService = async (email: string) => {
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    // ★ این خط رو عوض کن
     await createPasswordResetToken({
       userId: user.id,
       token,
@@ -233,7 +232,10 @@ export const resetPasswordService = async (
     }
 
     if (resetToken.usedAt) {
-      throw new AppError("This reset token has already been used", 400);
+      throw new AppError(
+        "This reset token has already been used",
+        400
+      );
     }
 
     if (resetToken.expiresAt < new Date()) {
