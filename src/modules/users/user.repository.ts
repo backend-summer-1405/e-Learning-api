@@ -62,6 +62,15 @@ export const updateUser = async (
   });
 };
 
+export const deleteUser = async (userId : string) => {
+  return prisma.user.delete({
+    where : {
+      id : userId,
+    }
+
+  })
+}
+
 export const findUserPasswordById = async (
   userId: string
 ) => {

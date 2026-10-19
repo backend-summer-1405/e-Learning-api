@@ -109,6 +109,13 @@ export const updateMeService = async (
   );
 };
 
+// Delete User
+export const deleteMeService = async(
+  
+) => {
+
+}
+
 export const changePasswordService = async (
   userId: string,
   currentPassword: string,
