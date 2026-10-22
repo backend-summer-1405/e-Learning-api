@@ -31,6 +31,12 @@ export const createCommentValidation = [
     .optional({ nullable: true })
     .isUUID()
     .withMessage("parentId must be a valid UUID"),
+
+  body("timestamp")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("timestamp must be a non-negative integer")
+    .toInt(),
 ];
 
 export const getCommentsValidation = [

@@ -5,6 +5,7 @@ export type CreateCommentInput = {
   targetType: CommentableType;
   targetId: string;
   parentId?: string | null;
+  timestamp?: number;
 };
 
 export type UpdateCommentInput = {

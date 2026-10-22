@@ -21,6 +21,7 @@ export const createComment = async (data: {
   parentId: string | null;
   path: string;
   depth: number;
+  timestamp?: number | null;
 }) => {
   return prisma.comment.create({
     data,

@@ -19,19 +19,47 @@ import type { CommentableType } from "@prisma/client";
 const assertTargetExists = async (
   targetType: CommentableType,
   targetId: string
-) => {
+): Promise<void> => {
   switch (targetType) {
     case "NEWS": {
       const news = await prisma.news.findUnique({
-        where: { id: targetId },
-        select: { id: true },
+        where: {
+          id: targetId
+        },
+        select: {
+          id: true
+        },
       });
       if (!news) throw new AppError("News not found", 404);
       break;
     }
-    case "COURSE":
-    case "PODCAST":
-      throw new AppError(`${targetType} comments not implemented yet`, 501);
+
+    case "COURSE": {
+      const course = await prisma.course.findUnique({
+        where: {
+          id: targetId
+        },
+        select: {
+          id: true
+        },
+      });
+      if (!course) throw new AppError("Course not found", 404);
+      break;
+    }
+    case "PODCAST": {
+      const podcast = await prisma.podcast.findUnique({
+        where: {
+          id: targetId
+        },
+        select: {
+          id: true
+        },
+      });
+      if (!podcast) throw new AppError("Podcast not found", 404);
+      break;
+    }
+
+
     default:
       throw new AppError("Invalid target type", 400);
   }
@@ -81,6 +109,7 @@ export const createCommentService = async (
       parentId: data.parentId ?? null,
       path,
       depth,
+      timestamp: data.targetType === "PODCAST" ? data.timestamp : null,
     });
   } catch (error) {
     if (error instanceof AppError) throw error;
