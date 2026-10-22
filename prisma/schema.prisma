@@ -24,6 +24,12 @@ enum ReactableType {
   PODCAST
 }
 
+enum RatableType {
+  NEWS
+  COURSE
+  PODCAST
+}
+
 enum CommentableType {
   NEWS
   COURSE
@@ -36,6 +42,45 @@ enum CommentReactionType {
 }
 
 enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CourseStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum WalletTransactionType {
+  TOPUP      
+  PURCHASE  
+  REFUND    
+  WITHDRAW
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PodcastStatus {
+  DRAFT
   PENDING
   APPROVED
   REJECTED
@@ -57,6 +102,17 @@ model User {
   reactions Reaction[]
   comments            Comment[]
   commentReactions    CommentReaction[]
+
+  courses     Course[]     @relation("TeacherCourses")   
+  enrollments Enrollment[]                               
+  payments    Payment[]
+  wallet      Wallet?
+  withdrawals WithdrawalRequest[] 
+  ratings       Rating[]    
+
+  podcasts        Podcast[]         @relation("TeacherPodcasts")
+  podcastProgress PodcastProgress[]
+  podcastPlays    PodcastPlay[]  
 }
 
 model PasswordResetToken {
@@ -138,7 +194,9 @@ model Comment {
   @@index([parentId, status, createdAt])                
   @@index([userId])
   @@index([path])
-  @@index([status])                                   
+  @@index([status])   
+
+   timestamp Int?                                
 }
 
 model CommentReaction {
@@ -158,6 +216,23 @@ model CommentReaction {
   @@index([userId])
 }
 
+model Rating {
+  id         String      @id @default(uuid())
+  userId     String
+  targetId   String
+  targetType RatableType
+  score      Int         // 1-5
+  comment    String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@index([userId])
+}
+
 
 model News {
   id        String      @id @default(uuid())
@@ -166,6 +241,9 @@ model News {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   images    NewsImage[]
+
+  ratingAvg   Float @default(0)
+  ratingCount Int   @default(0)
 }
 
 model NewsImage {
@@ -177,4 +255,240 @@ model NewsImage {
   news News @relation(fields: [newsId], references: [id], onDelete: Cascade)
 
   @@index([newsId])
+}
+
+model Course {
+  id               String       @id @default(uuid())
+  title            String
+  slug             String       @unique
+  description      String
+  price            Int          @default(0)
+  isFree           Boolean      @default(true)
+  status           CourseStatus @default(DRAFT)
+  level            CourseLevel  @default(BEGINNER)
+  language         String       @default("fa")
+  thumbnailUrl     String?
+  previewVideoUrl  String?
+  teacherId        String
+  rejectionReason  String?
+
+  ratingAvg        Float        @default(0)
+  ratingCount      Int          @default(0)
+  likeCount        Int          @default(0)
+  dislikeCount     Int          @default(0)
+  enrollmentCount  Int          @default(0)
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  teacher     User           @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  sections    Section[]
+  images      CourseImage[]
+  enrollments Enrollment[]
+
+  @@index([status, createdAt])
+  @@index([teacherId])
+  @@index([slug])
+  @@index([isFree, status])
+  @@index([level, status])
+  @@index([ratingAvg])
+  @@index([enrollmentCount])
+}
+
+model Section {
+  id       String @id @default(uuid())
+  courseId String
+  title    String
+  order    Int    @default(0)
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([courseId, order])
+}
+
+model Lesson {
+  id         String   @id @default(uuid())
+  sectionId  String
+  title      String
+  videoUrl   String
+  duration   Int      @default(0)
+  order      Int      @default(0)
+  isFree     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  section  Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
+
+  @@index([sectionId, order])
+}
+
+model CourseImage {
+  id        String   @id @default(uuid())
+  courseId  String
+  url       String
+  isPrimary Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, isPrimary])
+  @@index([courseId, order])
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  userId     String
+  courseId   String
+  progress   Int      @default(0)
+  enrolledAt DateTime @default(now())
+
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons LessonProgress[]
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+}
+
+model LessonProgress {
+  id           String   @id @default(uuid())
+  enrollmentId String
+  lessonId     String
+  isCompleted  Boolean  @default(false)
+  lastPosition Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@index([enrollmentId])
+  @@index([lessonId])
+}
+
+
+model Payment {
+  id         String        @id @default(uuid())
+  userId     String
+  amount     Int
+  authority  String?       @unique
+  refId      String?
+  status     PaymentStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  balance   Int      @default(0)   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id          String                @id @default(uuid())
+  walletId    String
+  type        WalletTransactionType
+  amount      Int                  
+  description String?
+  referenceId String?              
+  createdAt   DateTime              @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
+}
+
+model WithdrawalRequest {
+  id          String           @id @default(uuid())
+  userId      String
+  amount      Int
+  iban        String
+  fullName    String
+  status      WithdrawalStatus @default(PENDING)
+  adminNote   String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Podcast {
+  id               String        @id @default(uuid())
+  title            String
+  slug             String        @unique
+  description      String
+  audioUrl         String
+  subtitleUrl      String?
+  duration         Int           @default(0)
+  thumbnailUrl     String?
+  teacherId        String
+  status           PodcastStatus @default(DRAFT)
+  rejectionReason  String?
+  
+  ratingAvg        Float         @default(0)
+  ratingCount      Int           @default(0)
+  likeCount        Int           @default(0)
+  dislikeCount     Int           @default(0)
+  playCount        Int           @default(0)
+  commentCount     Int           @default(0)
+  
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  teacher     User              @relation("TeacherPodcasts", fields: [teacherId], references: [id], onDelete: Restrict)
+  progress    PodcastProgress[]
+  plays       PodcastPlay[]
+
+  @@index([status, createdAt])
+  @@index([teacherId])
+  @@index([slug])
+  @@index([playCount])
+}
+
+model PodcastProgress {
+  id                String   @id @default(uuid())
+  userId            String
+  podcastId         String
+  lastPosition      Int      @default(0)
+  completedSegments Json?
+  updatedAt         DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  podcast Podcast @relation(fields: [podcastId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, podcastId])
+  @@index([userId])
+  @@index([podcastId])
+}
+
+model PodcastPlay {
+  id          String   @id @default(uuid())
+  podcastId   String
+  userId      String?
+  position    Int
+  createdAt   DateTime @default(now())
+
+  podcast Podcast @relation(fields: [podcastId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([podcastId, createdAt])
+  @@index([podcastId, position])
+  @@index([userId])
 }
