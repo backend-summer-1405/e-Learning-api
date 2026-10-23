@@ -92,42 +92,4 @@ newsRouter.get(
   validationMiddleware,
   getNewsImagesController,
 );
-
-// Add multiple images to a news
-newsRouter.post(
-  "/:id/images",
-  authMiddleware,
-  adminMiddleware,
-  newsIdValidation,
-  newsImageUpload.array("images", 10),
-  validationMiddleware,
-  addNewsImagesController,
-);
-
-// Delete one news image
-newsRouter.delete(
-  "/:id/images/:imageId",
-  authMiddleware,
-  adminMiddleware,
-  newsIdValidation,
-  newsImageIdValidation,
-  validationMiddleware,
-  deleteNewsImageController,
-);
-
-// Replace one news image
-newsRouter.patch(
-  "/:id/images/:imageId",
-  authMiddleware,
-  adminMiddleware,
-  newsIdValidation,
-  newsImageIdValidation,
-  newsImageUpload.single("image"),
-  validationMiddleware,
-  replaceNewsImageController,
-);
-
-
-
-
 export default newsRouter;
