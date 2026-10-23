@@ -6,6 +6,8 @@ import {
   getAccountByIdController,
   getMyAccountsController,
   updateAccountController,
+  switchAccountController,
+  getActiveAccountController,
 } from "./account.controller.js";
 
 import {
@@ -27,7 +29,7 @@ import validationMiddleware from "../../middleware/validation.middleware.js";
 import accountImageUpload from "../../middleware/account-image-upload.middleware.js";
 
 const accountRouter = Router();
-//authmidd
+
 accountRouter.use(authMiddleware);
 
 // create account
@@ -35,71 +37,71 @@ accountRouter.post(
   "/",
   createAccountValidation,
   validationMiddleware,
-  createAccountController,
+  createAccountController
 );
 
-// get all user account
 accountRouter.get("/", getMyAccountsController);
 
-// upload iamge
+accountRouter.get("/active", getActiveAccountController);
+
+// switch account
+accountRouter.post(
+  "/:accountId/switch",
+  accountIdValidation,
+  validationMiddleware,
+  switchAccountController
+);
+
+accountRouter.get(
+  "/:accountId",
+  accountIdValidation,
+  validationMiddleware,
+  getAccountByIdController
+);
+
+accountRouter.patch(
+  "/:accountId",
+  updateAccountValidation,
+  validationMiddleware,
+  updateAccountController
+);
+
+accountRouter.delete(
+  "/:accountId",
+  accountIdValidation,
+  validationMiddleware,
+  deleteAccountController
+);
+
 accountRouter.post(
   "/:accountId/images",
   accountIdValidation,
   validationMiddleware,
   accountImageUpload.array("images", 5),
-  uploadAccountImagesController,
+  uploadAccountImagesController
 );
 
-// get image account by id
 accountRouter.get(
   "/:accountId/images",
   accountIdValidation,
   validationMiddleware,
-  getAccountImagesController,
+  getAccountImagesController
 );
 
-// delete image by id && accountId
-accountRouter.delete(
-  "/:accountId/images/:imageId",
-  accountIdValidation,
-  validationMiddleware,
-  deleteAccountImageController,
-);
-
-//get account info
-accountRouter.get(
-  "/:accountId",
-  accountIdValidation,
-  validationMiddleware,
-  getAccountByIdController,
-);
-
-// edit account by id
-accountRouter.patch(
-  "/:accountId",
-  updateAccountValidation,
-  validationMiddleware,
-  updateAccountController,
-);
-
-//delete account by id
 accountRouter.delete(
   "/:accountId/images/:imageId",
   accountIdValidation,
   imageIdValidation,
   validationMiddleware,
-  deleteAccountImageController,
+  deleteAccountImageController
 );
 
-// chose main image profile
 accountRouter.patch(
   "/:accountId/images/:imageId/primary",
   accountIdValidation,
   imageIdValidation,
   validationMiddleware,
-  setPrimaryAccountImageController,
+  setPrimaryAccountImageController
 );
-
-
 
 export default accountRouter;

@@ -44,12 +44,13 @@ export const findAccountsByUserId = async (userId: string) => {
   });
 };
 
-export const findAccountById = async (accountId: string) => {
-  return prisma.account.findUnique({
-    where: { id: accountId },
-    include: {
-      images: true,
+export const findAccountById = async (accountId: string, userId: string) => {
+  return prisma.account.findFirst({
+    where: {
+      id: accountId,
+      userId,
     },
+    include: { images: true },
   });
 };
 
@@ -60,18 +61,14 @@ export const findAccountByUsername = async (username: string) => {
 };
 
 export const updateAccount = async (
-  userId: string,
   accountId: string,
   data: {
     username?: string;
     name?: string | null;
-  },
+  }
 ) => {
   return prisma.account.update({
-    where: {
-      id: accountId,
-      userId,
-    },
+    where: { id: accountId },
     data,
     select: {
       id: true,
@@ -84,15 +81,9 @@ export const updateAccount = async (
   });
 };
 
-export const deleteAccount = async (
-  userId: string,
-  accountId: string,
-) => {
+export const deleteAccount = async (accountId: string) => {
   return prisma.account.delete({
-    where: {
-      id: accountId,
-      userId,
-    },
+    where: { id: accountId },
     select: {
       id: true,
       username: true,
@@ -105,5 +96,41 @@ export const deleteAccount = async (
         },
       },
     },
+  });
+};
+
+
+export const switchActiveAccount = async (
+  userId: string,
+  accountId: string
+) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { activeAccountId: accountId },
+    select: {
+      id: true,
+      activeAccountId: true,
+    },
+  });
+};
+
+export const findActiveAccount = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { activeAccountId: true },
+  });
+
+  if (!user?.activeAccountId) return null;
+
+  return prisma.account.findUnique({
+    where: { id: user.activeAccountId },
+    include: { images: true },
+  });
+};
+
+export const clearActiveAccount = async (userId: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { activeAccountId: null },
   });
 };

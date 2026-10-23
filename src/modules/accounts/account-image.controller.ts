@@ -11,21 +11,17 @@ const getRouteId = (value: unknown, fieldName: string): string => {
   if (typeof value !== "string" || !value) {
     throw new AppError(`Invalid ${fieldName}`, 400);
   }
-
   return value;
 };
 
 export const uploadAccountImagesController = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const userId = res.locals.userId as string;
-
-    if (!userId) {
-      throw new AppError("Authentication required", 401);
-    }
+    if (!userId) throw new AppError("Authentication required", 401);
 
     const accountId = getRouteId(req.params.accountId, "account ID");
     const files = req.files;
@@ -34,11 +30,7 @@ export const uploadAccountImagesController = async (
       throw new AppError("At least one image is required", 400);
     }
 
-    const images = await uploadAccountImagesService(
-      userId,
-      accountId,
-      files,
-    );
+    const images = await uploadAccountImagesService(userId, accountId, files);
 
     res.status(201).json({
       success: true,
@@ -53,17 +45,13 @@ export const uploadAccountImagesController = async (
 export const getAccountImagesController = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const userId = res.locals.userId as string;
-
-    if (!userId) {
-      throw new AppError("Authentication required", 401);
-    }
+    if (!userId) throw new AppError("Authentication required", 401);
 
     const accountId = getRouteId(req.params.accountId, "account ID");
-
     const images = await getAccountImagesService(userId, accountId);
 
     res.status(200).json({
@@ -78,23 +66,16 @@ export const getAccountImagesController = async (
 export const deleteAccountImageController = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const userId = res.locals.userId as string;
-
-    if (!userId) {
-      throw new AppError("Authentication required", 401);
-    }
+    if (!userId) throw new AppError("Authentication required", 401);
 
     const accountId = getRouteId(req.params.accountId, "account ID");
     const imageId = getRouteId(req.params.imageId, "image ID");
 
-    const image = await deleteAccountImageService(
-      userId,
-      accountId,
-      imageId,
-    );
+    const image = await deleteAccountImageService(userId, accountId, imageId);
 
     res.status(200).json({
       success: true,
@@ -109,14 +90,11 @@ export const deleteAccountImageController = async (
 export const setPrimaryAccountImageController = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const userId = res.locals.userId as string;
-
-    if (!userId) {
-      throw new AppError("Authentication required", 401);
-    }
+    if (!userId) throw new AppError("Authentication required", 401);
 
     const accountId = getRouteId(req.params.accountId, "account ID");
     const imageId = getRouteId(req.params.imageId, "image ID");
@@ -124,7 +102,7 @@ export const setPrimaryAccountImageController = async (
     const image = await setPrimaryAccountImageService(
       userId,
       accountId,
-      imageId,
+      imageId
     );
 
     res.status(200).json({

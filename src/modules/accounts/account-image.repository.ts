@@ -2,7 +2,7 @@ import prisma from "../../config/prisma.js";
 
 export const createAccountImages = async (
   accountId: string,
-  urls: string[],
+  urls: string[]
 ) => {
   return prisma.accountImage.createMany({
     data: urls.map((url) => ({
@@ -14,18 +14,14 @@ export const createAccountImages = async (
 
 export const findAccountImages = async (
   userId: string,
-  accountId: string,
+  accountId: string
 ) => {
   return prisma.accountImage.findMany({
     where: {
       accountId,
-      account: {
-        userId,
-      },
+      account: { userId },
     },
-    orderBy: {
-      createdAt: "asc",
-    },
+    orderBy: { createdAt: "asc" },
     select: {
       id: true,
       url: true,
@@ -38,15 +34,13 @@ export const findAccountImages = async (
 export const findAccountImageById = async (
   userId: string,
   accountId: string,
-  imageId: string,
+  imageId: string
 ) => {
   return prisma.accountImage.findFirst({
     where: {
       id: imageId,
       accountId,
-      account: {
-        userId,
-      },
+      account: { userId },
     },
     select: {
       id: true,
@@ -59,9 +53,7 @@ export const findAccountImageById = async (
 
 export const deleteAccountImage = async (imageId: string) => {
   return prisma.accountImage.delete({
-    where: {
-      id: imageId,
-    },
+    where: { id: imageId },
     select: {
       id: true,
       url: true,
@@ -73,28 +65,20 @@ export const deleteAccountImage = async (imageId: string) => {
 
 export const setPrimaryAccountImage = async (
   accountId: string,
-  imageId: string,
+  imageId: string
 ) => {
   return prisma.$transaction(async (tx) => {
-    // Remove primary status from the current primary image.
     await tx.accountImage.updateMany({
       where: {
         accountId,
         isPrimary: true,
       },
-      data: {
-        isPrimary: false,
-      },
+      data: { isPrimary: false },
     });
 
-    // Set the selected image as primary.
     return tx.accountImage.update({
-      where: {
-        id: imageId,
-      },
-      data: {
-        isPrimary: true,
-      },
+      where: { id: imageId },
+      data: { isPrimary: true },
       select: {
         id: true,
         url: true,
