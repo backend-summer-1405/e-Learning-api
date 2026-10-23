@@ -101,7 +101,7 @@ export const createCommentService = async (
     const path = parentPath ? `${parentPath}.${newId}` : newId;
     const depth = parentDepth + 1;
 
-    return await createComment({
+    const createdComment = await createComment({
       content: data.content.trim(),
       userId,
       targetType: data.targetType,
@@ -111,6 +111,16 @@ export const createCommentService = async (
       depth,
       timestamp: data.targetType === "PODCAST" ? data.timestamp : null,
     });
+
+      // update podcast commentcount
+    if (data.targetType === "PODCAST") {
+      await prisma.podcast.update({
+        where: { id: data.targetId },
+        data: { commentCount: { increment: 1 } },
+      });
+    }
+
+    return createdComment;
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -236,6 +246,14 @@ export const deleteCommentService = async (
     }
 
     await softDeleteComment(commentId);
+
+  //  updaste podcast comment Count
+    if (comment.targetType === "PODCAST") {
+      await prisma.podcast.update({
+        where: { id: comment.targetId },
+        data: { commentCount: { decrement: 1 } },
+      });
+    }
 
     return { success: true };
   } catch (error) {
