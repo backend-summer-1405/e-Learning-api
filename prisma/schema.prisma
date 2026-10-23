@@ -97,6 +97,9 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   
+  activeAccountId String?   @unique
+  activeAccount   Account?  @relation("ActiveAccount", fields: [activeAccountId], references: [id], onDelete: SetNull)
+  
   accounts  Account[]
   passwordResetTokens PasswordResetToken[]
   reactions Reaction[]
@@ -135,8 +138,12 @@ model Account {
   userId    String
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  images    AccountImage[]
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeForUser User?          @relation("ActiveAccount")
+  images        AccountImage[]
+
+  @@index([userId])  
 }
 
 model AccountImage {
