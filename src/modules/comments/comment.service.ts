@@ -15,6 +15,7 @@ import {
 } from "./comment.repository.js";
 import type { CreateCommentInput } from "./comment.types.js";
 import type { CommentableType } from "@prisma/client";
+import { createNotificationService } from "../notifications/notification.service.js";
 
 const assertTargetExists = async (
   targetType: CommentableType,
@@ -112,7 +113,26 @@ export const createCommentService = async (
       timestamp: data.targetType === "PODCAST" ? data.timestamp : null,
     });
 
-      // update podcast commentcount
+
+    if (data.parentId) {
+      const parent = await findCommentById(data.parentId);
+      if (parent && parent.userId !== userId) {
+        await createNotificationService({
+          userId: parent.userId,
+          type: "COMMENT_REPLY",
+          title: "پاسخ جدید به کامنتت",
+          message: "کسی به کامنتت پاسخ داد",
+          data: {
+            commentId: createdComment.id,
+            parentId: data.parentId,
+            targetType: data.targetType,
+            targetId: data.targetId,
+          },
+        });
+      }
+    }
+
+    // update podcast commentcount
     if (data.targetType === "PODCAST") {
       await prisma.podcast.update({
         where: { id: data.targetId },
@@ -247,7 +267,7 @@ export const deleteCommentService = async (
 
     await softDeleteComment(commentId);
 
-  //  updaste podcast comment Count
+    //  updaste podcast comment Count
     if (comment.targetType === "PODCAST") {
       await prisma.podcast.update({
         where: { id: comment.targetId },
@@ -282,7 +302,36 @@ export const setCommentReactionService = async (data: {
       throw new AppError("Cannot react to a non-approved comment", 400);
     }
 
-    return await setCommentReaction(data);
+    const existingReaction = await prisma.commentReaction.findUnique({
+      where: {
+        userId_commentId: {
+          userId: data.userId,
+          commentId: data.commentId,
+        },
+      },
+    });
+
+    const result = await setCommentReaction(data);
+
+    if (
+      data.type === "LIKE" &&
+      !existingReaction &&
+      comment.userId !== data.userId
+    ) {
+      await createNotificationService({
+        userId: comment.userId,
+        type: "COMMENT_LIKE",
+        title: "کامنتت لایک شد",
+        message: "کسی کامنتت رو لایک کرد",
+        data: {
+          commentId: data.commentId,
+          targetType: comment.targetType,
+          targetId: comment.targetId,
+        },
+      });
+    }
+
+    return result;
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;

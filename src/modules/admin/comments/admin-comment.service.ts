@@ -1,4 +1,5 @@
 import AppError from "../../../utils/AppError.js";
+import { createNotificationService } from "../../notifications/notification.service.js";
 import {
   adminFindComments,
   adminCountComments,
@@ -51,7 +52,19 @@ export const adminApproveCommentService = async (
     if (comment.deletedAt)
       throw new AppError("Cannot approve a deleted comment", 400);
 
+
     await adminApproveComment(id);
+
+    // ★ Notification
+    await createNotificationService({
+      userId: comment.userId,
+      type: "COMMENT_APPROVED",
+      title: "کامنتت تأیید شد",
+      message: "کامنتت توسط ادمین تأیید شد",
+      data: { commentId: id },
+    });
+
+    return { success: true };
 
     return { success: true };
   } catch (error) {
@@ -74,6 +87,17 @@ export const adminRejectCommentService = async (
       throw new AppError("Cannot reject a deleted comment", 400);
 
     await adminRejectComment(id, reason);
+
+    // ★ Notification
+    await createNotificationService({
+      userId: comment.userId,
+      type: "COMMENT_REJECTED",
+      title: "کامنتت رد شد",
+      message: `کامنتت رد شد. دلیل: ${reason}`,
+      data: { commentId: id, reason },
+    });
+
+    return { success: true };
 
     return { success: true };
   } catch (error) {
