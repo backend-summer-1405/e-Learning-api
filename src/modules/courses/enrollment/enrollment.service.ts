@@ -11,6 +11,7 @@ import {
 import { findCourseById } from "../course.repository.js";
 import { findWalletByUserId } from "../../wallet/wallet.repository.js";
 import { createNotificationService } from "../../notifications/notification.service.js";
+import { clearCourseCache } from "../../../utils/cache.utils.js";
 
 export const enrollInCourseService = async (
   userId: string,
@@ -77,13 +78,11 @@ export const enrollInCourseService = async (
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // ۱. کم کردن از کیف پول
       await tx.wallet.update({
         where: { id: wallet.id },
         data: { balance: { decrement: fullCourse.price } },
       });
 
-      // ۲. WalletTransaction
       await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
@@ -94,7 +93,6 @@ export const enrollInCourseService = async (
         },
       });
 
-      // ۳. 
       const enrollment = await tx.enrollment.create({
         data: { userId, courseId },
         select: {
@@ -131,6 +129,8 @@ export const enrollInCourseService = async (
       message: `دوره "${course.title}" با موفقیت خریداری شد`,
       data: { courseId, enrollmentId: result.id },
     });
+
+    await clearCourseCache()
 
     return result;
   } catch (error) {

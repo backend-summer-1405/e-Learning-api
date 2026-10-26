@@ -5,6 +5,7 @@ import authMiddleware from "../../../middleware/auth.middleware.js";
 import validationMiddleware from "../../../middleware/validation.middleware.js";
 import createUpload from "../../../middleware/upload.middleware.js";
 import teacherMiddleware from "../../../middleware/teacher.middleware.js";
+import { cacheMiddleware } from "../../../middleware/cache.middleware.js";
 
 const courseImageRouter = Router();
 
@@ -17,6 +18,7 @@ const courseImageUpload = createUpload({
 
 courseImageRouter.get(
     "/courses/:courseId/images",
+    cacheMiddleware(600),
     courseIdParamValidation,
     validationMiddleware,
     getCourseImagesController

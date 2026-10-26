@@ -16,12 +16,14 @@ import {
 import authMiddleware from "../../middleware/auth.middleware.js";
 import validationMiddleware from "../../middleware/validation.middleware.js";
 import teacherMiddleware from "../../middleware/teacher.middleware.js";
+import { cacheMiddleware } from "../../middleware/cache.middleware.js";
 
 const courseRouter = Router();
 
 //  PUBLIC 
 courseRouter.get(
   "/",
+   cacheMiddleware(300),
   getCoursesValidation,
   validationMiddleware,
   getCoursesController
@@ -29,6 +31,7 @@ courseRouter.get(
 
 courseRouter.get(
   "/:slug",
+  cacheMiddleware(600),
   courseSlugValidation,
   validationMiddleware,
   getCourseDetailController

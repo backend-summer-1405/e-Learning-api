@@ -1,7 +1,9 @@
+import { clear } from "node:console";
+import { clearCourseCache } from "../../utils/cache.utils.js";
 import prisma from "../../config/prisma.js";
+import redis from "../../config/redis.js";
 import AppError from "../../utils/AppError.js";
 import {
-  findCourseBySlug,
   findCourseById,
   findCourseTeacherAndStatus,
   findCourseDetailBySlug,
@@ -20,7 +22,10 @@ import type {
   GetCoursesQuery,
 } from "./course.types.js";
 
-const slugify = (text: string): string => {
+
+const slugify = (
+  text: string
+): string => {
   return text
     .toLowerCase()
     .trim()
@@ -96,7 +101,7 @@ export const createCourseService = async (
   try {
     const slug = await generateUniqueSlug(data.title);
 
-    return await createCourse({
+    const course = await createCourse({
       title: data.title.trim(),
       slug,
       description: data.description.trim(),
@@ -109,6 +114,10 @@ export const createCourseService = async (
       teacherId,
       status,
     });
+
+    await clearCourseCache();
+
+    return course;
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -158,7 +167,12 @@ export const updateCourseService = async (
       updateData.status = "PENDING";
     }
 
-    return await updateCourse(courseId, updateData);
+
+    const updated = await updateCourse(courseId, updateData);
+    await clearCourseCache();
+    return updated;
+
+
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -188,6 +202,10 @@ export const deleteCourseService = async (
     }
 
     await deleteCourse(courseId);
+    await clearCourseCache();
+    return {
+      success: true
+    };
 
     return { success: true };
   } catch (error) {

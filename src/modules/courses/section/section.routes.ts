@@ -9,6 +9,7 @@ import {
 import authMiddleware from "../../../middleware/auth.middleware.js";
 import validationMiddleware from "../../../middleware/validation.middleware.js";
 import teacherMiddleware from "../../../middleware/teacher.middleware.js";
+import { cacheMiddleware } from "../../../middleware/cache.middleware.js";
 
 const sectionRouter = Router();
 
@@ -21,6 +22,7 @@ sectionRouter.get(
 
 sectionRouter.post(
     "/courses/:courseId/sections",
+    cacheMiddleware(300),
     authMiddleware,
     teacherMiddleware,
     createSectionValidation,

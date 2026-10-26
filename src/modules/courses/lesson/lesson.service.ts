@@ -10,6 +10,7 @@ import {
 import { findSectionById } from "../section/section.repository.js";
 import { findCourseTeacherAndStatus } from "../course.repository.js";
 import type { CreateLessonInput, UpdateLessonInput } from "./lesson.types.js";
+import { clearLessonCache, clearSectionCache } from "../../../utils/cache.utils.js";
 
 export const getLessonsService = async (sectionId: string) => {
   try {
@@ -54,7 +55,7 @@ export const createLessonService = async (
       order = await countLessonsBySection(sectionId);
     }
 
-    return await createLesson({
+    const created = await createLesson({
       sectionId,
       title: data.title.trim(),
       videoUrl: data.videoUrl.trim(),
@@ -62,6 +63,12 @@ export const createLessonService = async (
       order,
       isFree: data.isFree ?? false,
     });
+
+    await clearLessonCache();
+    await clearSectionCache();
+
+    return created;
+
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -117,7 +124,13 @@ export const updateLessonService = async (
     if (data.order !== undefined) updateData.order = data.order;
     if (data.isFree !== undefined) updateData.isFree = data.isFree;
 
-    return await updateLesson(lessonId, updateData);
+    const updated = await updateLesson(lessonId, updateData);
+
+    await clearLessonCache();
+    await clearSectionCache();
+
+    return updated;
+
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -153,6 +166,9 @@ export const deleteLessonService = async (
     }
 
     await deleteLesson(lessonId);
+
+    await clearLessonCache();
+    await clearSectionCache();
 
     return { success: true };
   } catch (error) {

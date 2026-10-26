@@ -22,13 +22,6 @@ export const courseListSelect = {
   },
 } as const;
 
-export const findCourseBySlug = async (slug: string) => {
-  return prisma.course.findUnique({
-    where: { slug },
-    select: courseListSelect,
-  });
-};
-
 export const findCourseById = async (id: string) => {
   return prisma.course.findUnique({
     where: { id },

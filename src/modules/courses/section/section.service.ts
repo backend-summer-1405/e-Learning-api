@@ -12,6 +12,7 @@ import {
   findCourseTeacherAndStatus,
 } from "../course.repository.js";
 import type { CreateSectionInput, UpdateSectionInput } from "./section.types.js";
+import { clearSectionCache, clearCourseCache } from "../../../utils/cache.utils.js";
 
 export const getSectionsService = async (courseId: string) => {
   try {
@@ -56,11 +57,17 @@ export const createSectionService = async (
       order = await countSectionsByCourse(courseId);
     }
 
-    return await createSection({
+    const created = await createSection({
       courseId,
       title: data.title.trim(),
       order,
     });
+
+    // ★ پاک کردن کش
+    await clearSectionCache();
+    await clearCourseCache();
+
+    return created;
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -87,7 +94,7 @@ export const updateSectionService = async (
     }
 
     if (userRole !== "ADMIN" && teacherInfo.teacherId !== userId) {
-      throw new AppError("You can only edit your own sections", 403);
+      throw new AppError("You can only edit your sections", 403);
     }
 
     const updateData: { title?: string; order?: number } = {};
@@ -103,7 +110,12 @@ export const updateSectionService = async (
       updateData.order = data.order;
     }
 
-    return await updateSection(sectionId, updateData);
+    const updated = await updateSection(sectionId, updateData);
+
+    await clearSectionCache();
+    await clearCourseCache();
+
+    return updated;
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -133,6 +145,9 @@ export const deleteSectionService = async (
     }
 
     await deleteSection(sectionId);
+
+    await clearSectionCache();
+    await clearCourseCache();
 
     return { success: true };
   } catch (error) {

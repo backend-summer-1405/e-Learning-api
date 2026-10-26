@@ -9,6 +9,7 @@ import {
     deleteCourseImage,
 } from "./course-image.repository.js";
 import { findCourseById, findCourseTeacherAndStatus } from "../course.repository.js";
+import { clearCourseImageCache, clearCourseCache } from "../../../utils/cache.utils.js";
 
 const deleteFile = async (url: string) => {
     const filePath = path.resolve(url.replace(/^\/+/, ""));
@@ -62,7 +63,13 @@ export const addCourseImagesService = async (
             throw error;
         }
 
-        return await findCourseImages(courseId);
+        const addCourse = await findCourseImages(courseId);
+
+        await clearCourseImageCache();
+        await clearCourseCache();
+
+        return addCourse;
+
     } catch (error) {
         if (error instanceof AppError) throw error;
         throw error;
@@ -89,7 +96,13 @@ export const setPrimaryCourseImageService = async (
             throw new AppError("You can only manage your own course images", 403);
         }
 
-        return await setPrimaryCourseImage(courseId, imageId);
+        const setPrimary = await setPrimaryCourseImage(courseId, imageId);
+
+        await clearCourseImageCache();
+        await clearCourseCache();
+
+        return setPrimary;
+
     } catch (error) {
         if (error instanceof AppError) throw error;
         throw error;
@@ -118,6 +131,9 @@ export const deleteCourseImageService = async (
 
         await deleteCourseImage(imageId);
         await deleteFile(image.url);
+
+        await clearCourseImageCache();
+        await clearCourseCache();
 
         return { success: true };
     } catch (error) {
