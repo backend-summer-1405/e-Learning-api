@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -67,9 +67,9 @@ enum PaymentStatus {
 }
 
 enum WalletTransactionType {
-  TOPUP      
-  PURCHASE  
-  REFUND    
+  TOPUP
+  PURCHASE
+  REFUND
   WITHDRAW
 }
 
@@ -86,45 +86,63 @@ enum PodcastStatus {
   REJECTED
 }
 
+enum NotificationType {
+  COMMENT_REPLY
+  COMMENT_LIKE
+  COMMENT_APPROVED
+  COMMENT_REJECTED
+  COURSE_ENROLLED
+  COURSE_APPROVED
+  COURSE_REJECTED
+  PODCAST_APPROVED
+  PODCAST_REJECTED
+  WALLET_TOPUP
+  WALLET_WITHDRAW
+  PURCHASE
+  RATING
+}
+
 model User {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   name      String
-  email     String    @unique
+  email     String   @unique
   password  String?
-  googleId  String?   @unique
-  role      Role      @default(USER)
+  googleId  String?  @unique
+  role      Role     @default(USER)
   avatarUrl String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  
-  activeAccountId String?   @unique
-  activeAccount   Account?  @relation("ActiveAccount", fields: [activeAccountId], references: [id], onDelete: SetNull)
-  
-  accounts  Account[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activeAccountId String?  @unique
+  activeAccount   Account? @relation("ActiveAccount", fields: [activeAccountId], references: [id], onDelete: SetNull)
+
+  accounts            Account[]
   passwordResetTokens PasswordResetToken[]
-  reactions Reaction[]
+  reactions           Reaction[]
   comments            Comment[]
   commentReactions    CommentReaction[]
 
-  courses     Course[]     @relation("TeacherCourses")   
-  enrollments Enrollment[]                               
+  courses     Course[]            @relation("TeacherCourses")
+  enrollments Enrollment[]
   payments    Payment[]
   wallet      Wallet?
-  withdrawals WithdrawalRequest[] 
-  ratings       Rating[]    
+  withdrawals WithdrawalRequest[]
+  ratings     Rating[]
 
   podcasts        Podcast[]         @relation("TeacherPodcasts")
   podcastProgress PodcastProgress[]
-  podcastPlays    PodcastPlay[]  
+  podcastPlays    PodcastPlay[]
+
+  notifications Notification[]
 }
 
 model PasswordResetToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
+  id        String    @id @default(uuid())
+  token     String    @unique
   userId    String
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -132,18 +150,18 @@ model PasswordResetToken {
 }
 
 model Account {
-  id        String         @id @default(uuid())
-  username  String         @unique
+  id        String   @id @default(uuid())
+  username  String   @unique
   name      String?
   userId    String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   activeForUser User?          @relation("ActiveAccount")
   images        AccountImage[]
 
-  @@index([userId])  
+  @@index([userId])
 }
 
 model AccountImage {
@@ -165,24 +183,23 @@ model Reaction {
   type       ReactionType
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, targetType, targetId])
   @@index([targetType, targetId])
   @@index([userId])
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
 }
 
 model Comment {
   id              String        @id @default(uuid())
   content         String
   userId          String
-  status          CommentStatus @default(PENDING)  
-  rejectionReason String?                           
+  status          CommentStatus @default(PENDING)
+  rejectionReason String?
 
-  parentId  String?
-  path      String  @default("")
-  depth     Int     @default(0)
+  parentId String?
+  path     String  @default("")
+  depth    Int     @default(0)
 
   targetId   String
   targetType CommentableType
@@ -191,19 +208,19 @@ model Comment {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   replies Comment[] @relation("CommentReplies")
 
   reactions CommentReaction[]
 
-  @@index([targetType, targetId, status, createdAt])   
-  @@index([parentId, status, createdAt])                
+  timestamp Int?
+
+  @@index([targetType, targetId, status, createdAt])
+  @@index([parentId, status, createdAt])
   @@index([userId])
   @@index([path])
-  @@index([status])   
-
-   timestamp Int?                                
+  @@index([status])
 }
 
 model CommentReaction {
@@ -215,7 +232,7 @@ model CommentReaction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation( fields: [userId], references: [id],onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
@@ -228,7 +245,7 @@ model Rating {
   userId     String
   targetId   String
   targetType RatableType
-  score      Int         // 1-5
+  score      Int // 1-5
   comment    String?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
@@ -239,7 +256,6 @@ model Rating {
   @@index([targetType, targetId])
   @@index([userId])
 }
-
 
 model News {
   id        String      @id @default(uuid())
@@ -265,30 +281,30 @@ model NewsImage {
 }
 
 model Course {
-  id               String       @id @default(uuid())
-  title            String
-  slug             String       @unique
-  description      String
-  price            Int          @default(0)
-  isFree           Boolean      @default(true)
-  status           CourseStatus @default(DRAFT)
-  level            CourseLevel  @default(BEGINNER)
-  language         String       @default("fa")
-  thumbnailUrl     String?
-  previewVideoUrl  String?
-  teacherId        String
-  rejectionReason  String?
+  id              String       @id @default(uuid())
+  title           String
+  slug            String       @unique
+  description     String
+  price           Int          @default(0)
+  isFree          Boolean      @default(true)
+  status          CourseStatus @default(DRAFT)
+  level           CourseLevel  @default(BEGINNER)
+  language        String       @default("fa")
+  thumbnailUrl    String?
+  previewVideoUrl String?
+  teacherId       String
+  rejectionReason String?
 
-  ratingAvg        Float        @default(0)
-  ratingCount      Int          @default(0)
-  likeCount        Int          @default(0)
-  dislikeCount     Int          @default(0)
-  enrollmentCount  Int          @default(0)
+  ratingAvg       Float @default(0)
+  ratingCount     Int   @default(0)
+  likeCount       Int   @default(0)
+  dislikeCount    Int   @default(0)
+  enrollmentCount Int   @default(0)
 
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  teacher     User           @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  teacher     User          @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
   sections    Section[]
   images      CourseImage[]
   enrollments Enrollment[]
@@ -315,15 +331,15 @@ model Section {
 }
 
 model Lesson {
-  id         String   @id @default(uuid())
-  sectionId  String
-  title      String
-  videoUrl   String
-  duration   Int      @default(0)
-  order      Int      @default(0)
-  isFree     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid())
+  sectionId String
+  title     String
+  videoUrl  String
+  duration  Int      @default(0)
+  order     Int      @default(0)
+  isFree    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   section  Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   progress LessonProgress[]
@@ -352,8 +368,8 @@ model Enrollment {
   progress   Int      @default(0)
   enrolledAt DateTime @default(now())
 
-  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course  Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons LessonProgress[]
 
   @@unique([userId, courseId])
@@ -377,16 +393,15 @@ model LessonProgress {
   @@index([lessonId])
 }
 
-
 model Payment {
-  id         String        @id @default(uuid())
-  userId     String
-  amount     Int
-  authority  String?       @unique
-  refId      String?
-  status     PaymentStatus @default(PENDING)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id        String        @id @default(uuid())
+  userId    String
+  amount    Int
+  authority String?       @unique
+  refId     String?
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -397,7 +412,7 @@ model Payment {
 model Wallet {
   id        String   @id @default(uuid())
   userId    String   @unique
-  balance   Int      @default(0)   
+  balance   Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -409,9 +424,9 @@ model WalletTransaction {
   id          String                @id @default(uuid())
   walletId    String
   type        WalletTransactionType
-  amount      Int                  
+  amount      Int
   description String?
-  referenceId String?              
+  referenceId String?
   createdAt   DateTime              @default(now())
 
   wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
@@ -420,15 +435,15 @@ model WalletTransaction {
 }
 
 model WithdrawalRequest {
-  id          String           @id @default(uuid())
-  userId      String
-  amount      Int
-  iban        String
-  fullName    String
-  status      WithdrawalStatus @default(PENDING)
-  adminNote   String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id        String           @id @default(uuid())
+  userId    String
+  amount    Int
+  iban      String
+  fullName  String
+  status    WithdrawalStatus @default(PENDING)
+  adminNote String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -437,31 +452,31 @@ model WithdrawalRequest {
 }
 
 model Podcast {
-  id               String        @id @default(uuid())
-  title            String
-  slug             String        @unique
-  description      String
-  audioUrl         String
-  subtitleUrl      String?
-  duration         Int           @default(0)
-  thumbnailUrl     String?
-  teacherId        String
-  status           PodcastStatus @default(DRAFT)
-  rejectionReason  String?
-  
-  ratingAvg        Float         @default(0)
-  ratingCount      Int           @default(0)
-  likeCount        Int           @default(0)
-  dislikeCount     Int           @default(0)
-  playCount        Int           @default(0)
-  commentCount     Int           @default(0)
-  
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id              String        @id @default(uuid())
+  title           String
+  slug            String        @unique
+  description     String
+  audioUrl        String
+  subtitleUrl     String?
+  duration        Int           @default(0)
+  thumbnailUrl    String?
+  teacherId       String
+  status          PodcastStatus @default(DRAFT)
+  rejectionReason String?
 
-  teacher     User              @relation("TeacherPodcasts", fields: [teacherId], references: [id], onDelete: Restrict)
-  progress    PodcastProgress[]
-  plays       PodcastPlay[]
+  ratingAvg    Float @default(0)
+  ratingCount  Int   @default(0)
+  likeCount    Int   @default(0)
+  dislikeCount Int   @default(0)
+  playCount    Int   @default(0)
+  commentCount Int   @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacher  User              @relation("TeacherPodcasts", fields: [teacherId], references: [id], onDelete: Restrict)
+  progress PodcastProgress[]
+  plays    PodcastPlay[]
 
   @@index([status, createdAt])
   @@index([teacherId])
@@ -486,11 +501,11 @@ model PodcastProgress {
 }
 
 model PodcastPlay {
-  id          String   @id @default(uuid())
-  podcastId   String
-  userId      String?
-  position    Int
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  podcastId String
+  userId    String?
+  position  Int
+  createdAt DateTime @default(now())
 
   podcast Podcast @relation(fields: [podcastId], references: [id], onDelete: Cascade)
   user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -498,4 +513,20 @@ model PodcastPlay {
   @@index([podcastId, createdAt])
   @@index([podcastId, position])
   @@index([userId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }
