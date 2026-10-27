@@ -14,6 +14,7 @@ import {
   adminDeletePodcast,
 } from "./admin-podcast.repository.js";
 import type { AdminGetPodcastsQuery } from "./admin-podcast.types.js";
+import { clearPodcastCache } from "../../../utils/cache.utils.js";
 
 export const adminGetPodcastsService = async (query: AdminGetPodcastsQuery) => {
   try {
@@ -61,10 +62,10 @@ export const adminGetPodcastDetailService = async (id: string) => {
     return {
       podcast: {
         ...podcast,
-       
+
         createdAt: podcast.createdAt,
         updatedAt: podcast.updatedAt,
-       
+
         teacher: podcast.teacher,
       },
       stats: {
@@ -75,7 +76,7 @@ export const adminGetPodcastDetailService = async (id: string) => {
         totalComments: podcast.commentCount,
         ratingDistribution,
       },
-      topSegments,      
+      topSegments,
       recentComments,
       recentRatings,
       recentPlays,
@@ -94,6 +95,7 @@ export const adminApprovePodcastService = async (id: string) => {
       throw new AppError("Podcast is already approved", 400);
 
     await adminApprovePodcast(id);
+    await clearPodcastCache();
     return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -101,7 +103,10 @@ export const adminApprovePodcastService = async (id: string) => {
   }
 };
 
-export const adminRejectPodcastService = async (id: string, reason: string) => {
+export const adminRejectPodcastService = async (
+  id: string,
+  reason: string
+) => {
   try {
     const podcast = await adminFindPodcastById(id);
     if (!podcast) throw new AppError("Podcast not found", 404);
@@ -109,6 +114,7 @@ export const adminRejectPodcastService = async (id: string, reason: string) => {
       throw new AppError("Podcast is already rejected", 400);
 
     await adminRejectPodcast(id, reason);
+    await clearPodcastCache();
     return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -122,6 +128,7 @@ export const adminDeletePodcastService = async (id: string) => {
     if (!podcast) throw new AppError("Podcast not found", 404);
 
     await adminDeletePodcast(id);
+    await clearPodcastCache();
     return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;

@@ -3,11 +3,13 @@ import { createRatingController, updateRatingController, deleteRatingController,
 import { createRatingValidation, updateRatingValidation, ratingIdValidation, getRatingsValidation, } from "./rating.validation.js";
 import authMiddleware from "../../middleware/auth.middleware.js";
 import validationMiddleware from "../../middleware/validation.middleware.js";
+import { cacheMiddleware } from "../../middleware/cache.middleware.js";
 
 const ratingRouter = Router();
 
 ratingRouter.get(
   '/:targetType/:targetId/ratings',
+  cacheMiddleware(300),
   getRatingsValidation,
   validationMiddleware,
   getRatingsController

@@ -13,6 +13,7 @@ import {
 import authMiddleware from "../../../middleware/auth.middleware.js";
 import adminMiddleware from "../../../middleware/admin.middleware.js";
 import validationMiddleware from "../../../middleware/validation.middleware.js";
+import { cacheMiddleware } from "../../../middleware/cache.middleware.js";
 
 const adminNewsRouter = Router();
 
@@ -20,6 +21,7 @@ adminNewsRouter.use(authMiddleware, adminMiddleware);
 
 adminNewsRouter.get(
   "/",
+  cacheMiddleware(300),
   adminGetNewsValidation,
   validationMiddleware,
   adminGetNewsController
@@ -27,6 +29,7 @@ adminNewsRouter.get(
 
 adminNewsRouter.get(
   "/:id",
+  cacheMiddleware(600),
   adminNewsIdValidation,
   validationMiddleware,
   adminGetNewsByIdController

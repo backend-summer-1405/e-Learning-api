@@ -15,6 +15,7 @@ import {
 import authMiddleware from "../../../middleware/auth.middleware.js";
 import adminMiddleware from "../../../middleware/admin.middleware.js";
 import validationMiddleware from "../../../middleware/validation.middleware.js";
+import { cacheMiddleware } from "../../../middleware/cache.middleware.js";
 
 const adminCommentRouter = Router();
 
@@ -22,6 +23,7 @@ adminCommentRouter.use(authMiddleware, adminMiddleware);
 
 adminCommentRouter.get(
   "/",
+    cacheMiddleware(60),
   adminGetCommentsValidation,
   validationMiddleware,
   adminGetCommentsController
@@ -29,6 +31,7 @@ adminCommentRouter.get(
 
 adminCommentRouter.patch(
   "/:id/approve",
+    cacheMiddleware(60),
   adminCommentIdValidation,
   validationMiddleware,
   adminApproveCommentController

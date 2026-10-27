@@ -4,16 +4,20 @@ import {
   createNews,
   findAllNews,
   findNewsById,
-  deleteNews,              
+  deleteNews,
   deleteNewsReactions,
   updateNews,
 } from "./news.repository.js";
 import { CreateNewsInput } from "./news.type.js";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { clearNewsCache } from "../../utils/cache.utils.js";
 
-export const createNewsService = (data: CreateNewsInput, imageUrl?: string) => {
-  return createNews(data, imageUrl);
+export const createNewsService = async(data: CreateNewsInput, imageUrl?: string) => {
+  const news = await createNews(data, imageUrl);
+  await clearNewsCache();
+
+  return news;
 };
 
 export const getAllNewsService = () => {
@@ -54,7 +58,10 @@ export const updateNewsService = async (
     updateData.content = data.content.trim();
   }
 
-  return updateNews(id, updateData);
+  const updated = await updateNews(id, updateData);
+  await clearNewsCache();
+
+  return updated;
 };
 
 
@@ -82,8 +89,9 @@ export const deleteNewsService = async (id: string) => {
   );
 
   await deleteNewsReactions(id);
-
   await deleteNews(id);
+
+  await clearNewsCache();
 
   return news;
 };

@@ -20,12 +20,14 @@ import {
 import authMiddleware from "../../middleware/auth.middleware.js";
 import optionalAuthMiddleware from "../../middleware/optional-auth.middleware.js";
 import validationMiddleware from "../../middleware/validation.middleware.js";
+import { cacheMiddleware } from "../../middleware/cache.middleware.js";
 
 const commentRouter = Router();
 
 
 commentRouter.get(
   "/",
+  cacheMiddleware(60),
   optionalAuthMiddleware,
   getCommentsValidation,
   validationMiddleware,
@@ -34,6 +36,7 @@ commentRouter.get(
 
 commentRouter.get(
   "/:id/replies",
+  cacheMiddleware(60),
   optionalAuthMiddleware,
   commentIdValidation,
   validationMiddleware,
@@ -42,6 +45,7 @@ commentRouter.get(
 
 commentRouter.get(
   "/:id/reactions",
+  cacheMiddleware(60),
   commentIdValidation,
   validationMiddleware,
   getCommentReactionCountsController

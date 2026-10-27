@@ -16,6 +16,8 @@ import type {
   AdminActionSuccess,
 } from "./admin-comment.types.js";
 
+import { clearCommentCache } from "../../../utils/cache.utils.js";
+
 export const adminGetCommentsService = async (
   query: AdminGetCommentsQuery
 ): Promise<AdminGetCommentsResult> => {
@@ -51,9 +53,11 @@ export const adminApproveCommentService = async (
       throw new AppError("Comment is already approved", 400);
     if (comment.deletedAt)
       throw new AppError("Cannot approve a deleted comment", 400);
-
+    ;
 
     await adminApproveComment(id);
+
+    await clearCommentCache()
 
     // ★ Notification
     await createNotificationService({
@@ -64,9 +68,10 @@ export const adminApproveCommentService = async (
       data: { commentId: id },
     });
 
-    return { success: true };
+    return {
+      success: true
+    };
 
-    return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -87,6 +92,7 @@ export const adminRejectCommentService = async (
       throw new AppError("Cannot reject a deleted comment", 400);
 
     await adminRejectComment(id, reason);
+    await clearCommentCache();
 
     // ★ Notification
     await createNotificationService({
@@ -99,7 +105,6 @@ export const adminRejectCommentService = async (
 
     return { success: true };
 
-    return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -117,6 +122,7 @@ export const adminDeleteCommentService = async (
       throw new AppError("Comment is already deleted", 400);
 
     await adminSoftDeleteComment(id);
+    await clearCommentCache();
 
     return { success: true };
   } catch (error) {
@@ -136,6 +142,7 @@ export const adminRestoreCommentService = async (
       throw new AppError("Comment is not deleted", 400);
 
     await adminRestoreComment(id);
+    await clearCommentCache();
 
     return { success: true };
   } catch (error) {
@@ -153,6 +160,7 @@ export const adminHardDeleteCommentService = async (
     if (!comment) throw new AppError("Comment not found", 404);
 
     await adminHardDeleteComment(id);
+    await clearCommentCache();
 
     return { success: true };
   } catch (error) {

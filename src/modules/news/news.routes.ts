@@ -25,6 +25,7 @@ import {
   deleteNewsImageController,
   replaceNewsImageController,
 } from "./news-image.controller.js";
+import { cacheMiddleware } from "../../middleware/cache.middleware.js";
 
 const newsRouter = Router();
 
@@ -40,11 +41,16 @@ const newsImageUpload = createUpload({
 });
 
 // public routes
-newsRouter.get("/", getAllNewsController);
+newsRouter.get(
+  "/",
+  cacheMiddleware(300),
+  getAllNewsController
+);
 
 // get all
 newsRouter.get(
   "/:id",
+  cacheMiddleware(600),
   newsIdValidation,
   validationMiddleware,
   getNewsByIdController

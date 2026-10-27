@@ -12,6 +12,7 @@ import type {
   AdminGetCoursesResult,
   AdminActionSuccess,
 } from "./admin-course.types.js";
+import { clearCourseCache } from "../../../utils/cache.utils.js";
 
 export const adminGetCoursesService = async (
   query: AdminGetCoursesQuery
@@ -47,6 +48,7 @@ export const adminApproveCourseService = async (
       throw new AppError("Course is already approved", 400);
 
     await adminApproveCourse(id);
+    await clearCourseCache();
     return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -65,6 +67,7 @@ export const adminRejectCourseService = async (
       throw new AppError("Course is already rejected", 400);
 
     await adminRejectCourse(id, reason);
+    await clearCourseCache();
     return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -80,6 +83,7 @@ export const adminDeleteCourseService = async (
     if (!course) throw new AppError("Course not found", 404);
 
     await adminDeleteCourse(id);
+    await clearCourseCache();
     return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;

@@ -17,6 +17,7 @@ import type {
   RatingSummary,
 } from "./rating.types.js";
 import type { RatableType } from "@prisma/client";
+import { clearRatingCache } from "../../utils/cache.utils.js";
 
 const assertTargetExists = async (
   targetType: RatableType,
@@ -54,8 +55,9 @@ export const createRatingService = async (
     });
 
     await updateTargetRatingStats(data.targetType, data.targetId);
-
+    await clearRatingCache(data.targetType);
     return rating;
+
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -78,6 +80,8 @@ export const updateRatingService = async (
     const updated = await updateRating(ratingId, data);
     await updateTargetRatingStats(rating.targetType, rating.targetId);
 
+    await clearRatingCache(rating.targetType);
+
     return updated;
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -96,6 +100,8 @@ export const deleteRatingService = async (userId: string, ratingId: string) => {
 
     await deleteRating(ratingId);
     await updateTargetRatingStats(rating.targetType, rating.targetId);
+
+    await clearRatingCache(rating.targetType);
 
     return { success: true };
   } catch (error) {

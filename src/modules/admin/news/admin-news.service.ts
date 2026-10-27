@@ -8,6 +8,7 @@ import {
     adminDeleteNews,
 } from "./admin-news.repository.js";
 import type { AdminGetNewsQuery } from "./admin-news.types.js";
+import { clearNewsCache } from "../../../utils/cache.utils.js";
 
 export const adminGetNewsService = async (
     query: AdminGetNewsQuery
@@ -53,7 +54,11 @@ export const adminCreateNewsService = async (
         images?: string[];
     }) => {
     try {
-        return await adminCreateNews(data);
+        const created = await adminCreateNews(data);
+        await clearNewsCache();
+
+        return created;
+
     } catch (error) {
         if (error instanceof AppError) throw error;
         throw error;
@@ -71,7 +76,12 @@ export const adminUpdateNewsService = async (
         const news = await adminFindNewsById(id);
         if (!news) throw new AppError("News not found", 404);
 
-        return await adminUpdateNews(id, data);
+        const updated = await adminUpdateNews(id, data);
+
+        await clearNewsCache()
+
+        return updated;
+
     } catch (error) {
         if (error instanceof AppError) throw error;
         throw error;
@@ -84,6 +94,7 @@ export const adminDeleteNewsService = async (id: string) => {
         if (!news) throw new AppError("News not found", 404);
 
         await adminDeleteNews(id);
+        await clearNewsCache();
         return { success: true };
     } catch (error) {
         if (error instanceof AppError) throw error;

@@ -14,6 +14,7 @@ import {
 import authMiddleware from "../../../middleware/auth.middleware.js";
 import adminMiddleware from "../../../middleware/admin.middleware.js";
 import validationMiddleware from "../../../middleware/validation.middleware.js";
+import { cacheMiddleware } from "../../../middleware/cache.middleware.js";
 
 const adminPodcastRouter = Router();
 
@@ -21,6 +22,7 @@ adminPodcastRouter.use(authMiddleware, adminMiddleware);
 
 adminPodcastRouter.get(
   "/",
+  cacheMiddleware(300),
   adminGetPodcastsValidation,
   validationMiddleware,
   adminGetPodcastsController
@@ -28,6 +30,7 @@ adminPodcastRouter.get(
 
 adminPodcastRouter.get(
   "/:id",
+  cacheMiddleware(600),
   adminPodcastIdValidation,
   validationMiddleware,
   adminGetPodcastDetailController

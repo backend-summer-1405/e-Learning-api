@@ -1,11 +1,11 @@
 import { Router } from "express";
 import {
-    getPodcastsController, 
-    getPodcastDetailController, 
+    getPodcastsController,
+    getPodcastDetailController,
     createPodcastController,
     updatePodcastController,
-     deletePodcastController, 
-    trackPlayController, 
+    deletePodcastController,
+    trackPlayController,
     saveProgressController,
     getProgressController,
 } from "./podcast.controller.js";
@@ -24,6 +24,7 @@ import optionalAuthMiddleware from "../../middleware/optional-auth.middleware.js
 import validationMiddleware from "../../middleware/validation.middleware.js";
 import createUpload from "../../middleware/upload.middleware.js";
 import podcastUpload from "./podcast.upload.js";
+import { cacheMiddleware } from "../../middleware/cache.middleware.js";
 
 const podcastRouter = Router();
 
@@ -31,6 +32,7 @@ const podcastRouter = Router();
 
 podcastRouter.get(
     "/",
+    cacheMiddleware(300),
     getPodcastsValidation,
     validationMiddleware,
     getPodcastsController
@@ -38,6 +40,7 @@ podcastRouter.get(
 
 podcastRouter.get(
     "/:slug",
+    cacheMiddleware(600),
     podcastSlugValidation,
     validationMiddleware,
     getPodcastDetailController

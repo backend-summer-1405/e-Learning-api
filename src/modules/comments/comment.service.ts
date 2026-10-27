@@ -16,6 +16,7 @@ import {
 import type { CreateCommentInput } from "./comment.types.js";
 import type { CommentableType } from "@prisma/client";
 import { createNotificationService } from "../notifications/notification.service.js";
+import { clearCommentCache } from "../../utils/cache.utils.js";
 
 const assertTargetExists = async (
   targetType: CommentableType,
@@ -140,6 +141,8 @@ export const createCommentService = async (
       });
     }
 
+    await clearCommentCache()
+
     return createdComment;
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -239,7 +242,12 @@ export const updateCommentService = async (
       throw new AppError("Cannot edit a deleted comment", 400);
     }
 
-    return await updateComment(commentId, content.trim());
+    const updated = await updateComment(commentId, content.trim());
+
+    await clearCommentCache();
+
+    return updated;
+
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -266,16 +274,22 @@ export const deleteCommentService = async (
     }
 
     await softDeleteComment(commentId);
+    await clearCommentCache();
 
     //  updaste podcast comment Count
     if (comment.targetType === "PODCAST") {
       await prisma.podcast.update({
         where: { id: comment.targetId },
-        data: { commentCount: { decrement: 1 } },
+        data: {
+          commentCount: {
+            decrement: 1
+          }
+        },
       });
     }
 
     return { success: true };
+
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -354,6 +368,8 @@ export const removeCommentReactionService = async (data: {
     if (result.count === 0) {
       throw new AppError("Reaction not found", 404);
     }
+
+    await clearCommentCache();
 
     return { success: true };
   } catch (error) {

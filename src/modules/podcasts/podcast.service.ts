@@ -22,6 +22,8 @@ import type {
   UpdatePodcastInput,
 } from "./podcast.types.js";
 
+import { clearPodcastCache } from "../../utils/cache.utils.js";
+
 const slugify = (text: string): string =>
   text
     .toLowerCase()
@@ -45,7 +47,7 @@ const deleteFile = async (url: string) => {
   const filePath = path.resolve(url.replace(/^\/+/, ""));
   try {
     await fs.unlink(filePath);
-  } catch {}
+  } catch { }
 };
 
 export const getPodcastsService = async (query: {
@@ -106,12 +108,18 @@ export const createPodcastService = async (
       status: status as any,
     });
 
+    await clearPodcastCache();
+
     try {
       const subtitleUrl = await generatePodcastSubtitleService(
         audioFilePath,
         podcast.id
       );
-      return await updatePodcast(podcast.id, { subtitleUrl });
+      const updated = await updatePodcast(podcast.id, { subtitleUrl });
+
+      await clearPodcastCache();
+
+      return updated;
     } catch (subtitleError) {
       console.error(
         "Subtitle generation failed, podcast created without subtitle:",
@@ -124,7 +132,6 @@ export const createPodcastService = async (
     throw error;
   }
 };
-
 export const updatePodcastService = async (
   podcastId: string,
   userId: string,
@@ -153,7 +160,10 @@ export const updatePodcastService = async (
       updateData.status = "PENDING";
     }
 
-    return await updatePodcast(podcastId, updateData);
+    const updated = await updatePodcast(podcastId, updateData);
+    await clearPodcastCache()
+
+    return updateData;
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -181,6 +191,7 @@ export const deletePodcastService = async (
     if (podcast.subtitleUrl) await deleteFile(podcast.subtitleUrl);
 
     await deletePodcast(podcastId);
+    await clearPodcastCache();
     return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;

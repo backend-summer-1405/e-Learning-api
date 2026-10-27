@@ -5,6 +5,7 @@ import adminMiddleware from "../../../middleware/admin.middleware.js";
 import { adminCourseIdValidation, adminGetCoursesValidation, adminRejectCourseValidation } from "./admin-course.validation.js";
 import validationMiddleware from "../../../middleware/validation.middleware.js";
 import { adminApproveCourseController, adminDeleteCourseController, adminGetCoursesController, adminRejectCourseController } from "./admin-course.controller.js";
+import { cacheMiddleware } from "../../../middleware/cache.middleware.js";
 
 const adminCourseRouter = Router()
 
@@ -12,6 +13,7 @@ adminCourseRouter.use(authMiddleware, adminMiddleware)
 
 adminCourseRouter.get(
     "/",
+     cacheMiddleware(300),
     adminGetCoursesValidation,
     validationMiddleware,
     adminGetCoursesController,
