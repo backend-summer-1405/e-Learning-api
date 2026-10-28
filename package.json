@@ -24,6 +24,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
+    "bullmq": "^6.5.0",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.1",
@@ -36,6 +37,7 @@
     "openai": "^7.42.0",
     "prisma": "^6.19.3",
     "prisma-extension-pg-trgm": "^1.1.0",
+    "rate-limit-redis": "^6.0.2",
     "winston": "^3.19.0",
     "zarinpal-pay": "^3.0.0"
   },
