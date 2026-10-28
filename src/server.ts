@@ -1,21 +1,22 @@
+import { env } from "node:process";
 import app from "./app.js";
-import prisma from "./config/prisma.js";
+import logger from "./config/logger.js";
+import prisma from "./config/prisma.js"
 
-const PORT = 3000;
 
-const startServer = async () => {
+const start = async () => {
   try {
     await prisma.$connect();
+    logger.info("DB conected")
 
-    console.log("Database connected");
+    app.listen(env.PORT, () => {
+      logger.info(`server running on http/:localhost ${env.PORT}`)
+    })
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error("Failed to connect to database:", error);
-    process.exit(1);
+  } catch (err) {
+    logger.error(err);
+    process.exit(1)
   }
-};
+}
 
-startServer();
+start();

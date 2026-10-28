@@ -16,13 +16,13 @@ import {
   findPodcastProgress,
   upsertPodcastProgress,
 } from "./podcast.repository.js";
-import { generatePodcastSubtitleService } from "./podcast-subtitle.service.js";
 import type {
   CreatePodcastInput,
   UpdatePodcastInput,
 } from "./podcast.types.js";
-
+import { subtitleQueue } from "./subtitle/subtitle.queue.js";
 import { clearPodcastCache } from "../../utils/cache.utils.js";
+
 
 const slugify = (text: string): string =>
   text
@@ -110,28 +110,24 @@ export const createPodcastService = async (
 
     await clearPodcastCache();
 
-    try {
-      const subtitleUrl = await generatePodcastSubtitleService(
+    await subtitleQueue.add(
+      "generate-subtitle",
+      {
+        podcastId: podcast.id,
         audioFilePath,
-        podcast.id
-      );
-      const updated = await updatePodcast(podcast.id, { subtitleUrl });
-
-      await clearPodcastCache();
-
-      return updated;
-    } catch (subtitleError) {
-      console.error(
-        "Subtitle generation failed, podcast created without subtitle:",
-        subtitleError
-      );
-      return podcast;
-    }
+      },
+      {
+        jobId: `subtitle-${podcast.id}`,
+      }
+    );
+    return podcast;
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
   }
 };
+
+
 export const updatePodcastService = async (
   podcastId: string,
   userId: string,
