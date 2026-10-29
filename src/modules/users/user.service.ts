@@ -9,6 +9,7 @@ import {
   updateUser,
   findUserPasswordById,
   updateUserPassword,
+  deleteUser,
 } from "./user.repository.js";
 
 export const createUserService = async (data: {
@@ -19,7 +20,7 @@ export const createUserService = async (data: {
   let hashedPassword: string | undefined;
   if (data.password) {
     hashedPassword = await bcrypt.hash(
-      
+
       data.password,
       12
     );
@@ -110,11 +111,29 @@ export const updateMeService = async (
 };
 
 // Delete User
-export const deleteMeService = async(
-  
-) => {
+export const deleteMeService = async (userId: string) => {
+  try {
+    const user = await findUserById(userId);
 
-}
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    if (user.avatarUrl) {
+      const filePath = path.resolve(user.avatarUrl.replace(/^\//, ""));
+      try {
+        await fs.unlink(filePath);
+      } catch {
+      }
+    }
+
+    await deleteUser(userId);
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw error;
+  }
+};
 
 export const changePasswordService = async (
   userId: string,
