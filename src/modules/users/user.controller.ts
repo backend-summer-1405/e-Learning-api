@@ -1,9 +1,10 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import {
   createUserService,
   getMeService,
   updateMeService,
   changePasswordService,
+  deleteMeService
 } from "./user.service.js";
 
 export const createUserController = async (
@@ -52,6 +53,25 @@ export const updateMeController = async (
     message: "User updated successfully",
   });
 }
+
+export const deleteMeController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.userId as string;
+    const result = await deleteMeService(userId);
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: "User account deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 ////// change pass
 export const changePasswordController = async (

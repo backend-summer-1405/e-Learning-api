@@ -4,6 +4,7 @@ import {
   createUserController,
   getMeController,
   updateMeController,
+  deleteMeController
 } from "./user.controller.js";
 import {
   changePasswordValidation,
@@ -12,7 +13,7 @@ import {
 } from "./user.validation.js";
 import validationMiddleware from "../../middleware/validation.middleware.js";
 import authMiddleware from "../../middleware/auth.middleware.js";
-import createUpload from "../../middleware/upload.middleware.js";  
+import createUpload from "../../middleware/upload.middleware.js";
 
 const userRouter = Router();
 
@@ -39,7 +40,7 @@ userRouter.get(
 userRouter.patch(
   "/me",
   authMiddleware,
-  avatarUpload.single("avatar"),     
+  avatarUpload.single("avatar"),
   updateMeValidation,
   validationMiddleware,
   updateMeController
@@ -51,6 +52,12 @@ userRouter.patch(
   changePasswordValidation,
   validationMiddleware,
   changePasswordController
+);
+
+userRouter.delete(
+  "/me",
+  authMiddleware,
+  deleteMeController
 );
 
 export default userRouter;
