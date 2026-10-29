@@ -15,6 +15,7 @@ import {
 } from "./admin-podcast.repository.js";
 import type { AdminGetPodcastsQuery } from "./admin-podcast.types.js";
 import { clearPodcastCache } from "../../../utils/cache.utils.js";
+import { createNotificationService } from "../../notifications/notification.service.js";
 
 export const adminGetPodcastsService = async (query: AdminGetPodcastsQuery) => {
   try {
@@ -90,6 +91,15 @@ export const adminGetPodcastDetailService = async (id: string) => {
 export const adminApprovePodcastService = async (id: string) => {
   try {
     const podcast = await adminFindPodcastById(id);
+    if (podcast) {
+      await createNotificationService({
+        userId: podcast.teacher.id,
+        type: "PODCAST_APPROVED",
+        title: "پادکستت تأیید شد",
+        message: `پادکست "${podcast.title}" تأیید شد و منتشر شد`,
+        data: { podcastId: id },
+      });
+    }
     if (!podcast) throw new AppError("Podcast not found", 404);
     if (podcast.status === "APPROVED")
       throw new AppError("Podcast is already approved", 400);
@@ -109,6 +119,16 @@ export const adminRejectPodcastService = async (
 ) => {
   try {
     const podcast = await adminFindPodcastById(id);
+    if (podcast) {
+      await createNotificationService({
+        userId: podcast.teacher.id,
+        type: "PODCAST_REJECTED",
+        title: "پادکستت رد شد",
+        message: `پادکست "${podcast.title}" رد شد. دلیل: ${reason}`,
+        data: { podcastId: id, reason },
+      });
+    }
+
     if (!podcast) throw new AppError("Podcast not found", 404);
     if (podcast.status === "REJECTED")
       throw new AppError("Podcast is already rejected", 400);

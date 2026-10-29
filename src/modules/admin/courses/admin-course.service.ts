@@ -13,6 +13,7 @@ import type {
   AdminActionSuccess,
 } from "./admin-course.types.js";
 import { clearCourseCache } from "../../../utils/cache.utils.js";
+import { createNotificationService } from "../../notifications/notification.service.js";
 
 export const adminGetCoursesService = async (
   query: AdminGetCoursesQuery
@@ -43,11 +44,23 @@ export const adminApproveCourseService = async (
 ): Promise<AdminActionSuccess> => {
   try {
     const course = await adminFindCourseById(id);
+    if (course) {
+      await createNotificationService({
+        userId: course.teacher.id,
+        type: "COURSE_APPROVED",
+        title: "دوره‌ت تأیید شد",
+        message: `دوره "${course.title}" تأیید شد و منتشر شد`,
+        data: { courseId: id },
+      });
+    }
     if (!course) throw new AppError("Course not found", 404);
     if (course.status === "APPROVED")
       throw new AppError("Course is already approved", 400);
 
     await adminApproveCourse(id);
+
+
+
     await clearCourseCache();
     return { success: true };
   } catch (error) {
@@ -62,6 +75,15 @@ export const adminRejectCourseService = async (
 ): Promise<AdminActionSuccess> => {
   try {
     const course = await adminFindCourseById(id);
+    if (course) {
+      await createNotificationService({
+        userId: course.teacher.id,
+        type: "COURSE_REJECTED",
+        title: "دوره‌ت رد شد",
+        message: `دوره "${course.title}" رد شد. دلیل: ${reason}`,
+        data: { courseId: id, reason },
+      });
+    }
     if (!course) throw new AppError("Course not found", 404);
     if (course.status === "REJECTED")
       throw new AppError("Course is already rejected", 400);

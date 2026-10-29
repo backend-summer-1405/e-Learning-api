@@ -1,22 +1,27 @@
-import { env } from "node:process";
 import app from "./app.js";
+import prisma from "./config/prisma.js";
 import logger from "./config/logger.js";
-import prisma from "./config/prisma.js"
 
+import "./modules/podcasts/subtitle/subtitle.worker.js";
 
-const start = async () => {
+const PORT = process.env.PORT || 3000;
+
+const startServer = async () => {
   try {
     await prisma.$connect();
-    logger.info("DB conected")
+    logger.info(" DB connected");
 
-    app.listen(env.PORT, () => {
-      logger.info(`server running on http/:localhost ${env.PORT}`)
-    })
 
-  } catch (err) {
-    logger.error(err);
-    process.exit(1)
+    logger.info("Redis (cache) connected");
+    logger.info("Redis (BullMQ) connected");
+
+    app.listen(PORT, () => {
+      logger.info(`Server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    logger.error("Failed to start server:", error);
+    process.exit(1);
   }
-}
+};
 
-start();
+startServer();

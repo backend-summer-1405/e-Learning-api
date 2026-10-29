@@ -8,6 +8,7 @@ import {
 } from "./admin-withdrawal.repository.js";
 import { findWalletByUserId } from "../../wallet/wallet.repository.js";
 import type { AdminGetWithdrawalsQuery } from "./admin-withdrawal.types.js";
+import { createNotificationService } from "../../notifications/notification.service.js";
 
 export const adminGetWithdrawalsService = async (
   query: AdminGetWithdrawalsQuery
@@ -36,6 +37,15 @@ export const adminGetWithdrawalsService = async (
 export const adminApproveWithdrawalService = async (id: string) => {
   try {
     const withdrawal = await adminFindWithdrawalById(id);
+    if (withdrawal) {
+      await createNotificationService({
+        userId: withdrawal.userId,
+        type: "WALLET_WITHDRAW",
+        title: "برداشتت تأیید شد",
+        message: `درخواست برداشت ${withdrawal.amount.toLocaleString()} تومان تأیید شد`,
+        data: { withdrawalId: id, amount: withdrawal.amount },
+      });
+    }
     if (!withdrawal) throw new AppError("Withdrawal not found", 404);
     if (withdrawal.status !== "PENDING") {
       throw new AppError("Withdrawal is not pending", 400);
@@ -49,9 +59,21 @@ export const adminApproveWithdrawalService = async (id: string) => {
   }
 };
 
-export const adminRejectWithdrawalService = async (id: string, note: string) => {
+export const adminRejectWithdrawalService = async (
+  id: string,
+  note: string
+) => {
   try {
     const withdrawal = await adminFindWithdrawalById(id);
+    if (withdrawal) {
+      await createNotificationService({
+        userId: withdrawal.userId,
+        type: "WALLET_WITHDRAW",
+        title: "برداشتت رد شد",
+        message: `درخواست برداشت رد شد. دلیل: ${note}`,
+        data: { withdrawalId: id, note },
+      });
+    }
     if (!withdrawal) throw new AppError("Withdrawal not found", 404);
     if (withdrawal.status !== "PENDING") {
       throw new AppError("Withdrawal is not pending", 400);
