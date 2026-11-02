@@ -12,56 +12,44 @@ import {
 import {
   createCommentValidation,
   getCommentsValidation,
-  commentIdValidation,
   updateCommentValidation,
   setCommentReactionValidation,
   removeCommentReactionValidation,
+  getCommentRepliesValidation,
+  commentIdParamValidation,
 } from "./comment.validation.js";
 import authMiddleware from "../../middleware/auth.middleware.js";
 import optionalAuthMiddleware from "../../middleware/optional-auth.middleware.js";
 import validationMiddleware from "../../middleware/validation.middleware.js";
-import { cacheMiddleware } from "../../middleware/cache.middleware.js";
 
 const commentRouter = Router();
 
-
 commentRouter.get(
-  "/",
-  cacheMiddleware(60),
+  "/:targetType/:targetId",
   optionalAuthMiddleware,
   getCommentsValidation,
   validationMiddleware,
   getCommentsController
 );
 
-commentRouter.get(
-  "/:id/replies",
-  cacheMiddleware(60),
-  optionalAuthMiddleware,
-  commentIdValidation,
-  validationMiddleware,
-  getCommentRepliesController
-);
-
-commentRouter.get(
-  "/:id/reactions",
-  cacheMiddleware(60),
-  commentIdValidation,
-  validationMiddleware,
-  getCommentReactionCountsController
-);
-
-
 commentRouter.post(
-  "/",
+  "/:targetType/:targetId",
   authMiddleware,
   createCommentValidation,
   validationMiddleware,
   createCommentController
 );
 
+commentRouter.get(
+  "/:targetType/:targetId/replies/:commentId",
+  optionalAuthMiddleware,
+  getCommentRepliesValidation,
+  validationMiddleware,
+  getCommentRepliesController
+);
+
 commentRouter.patch(
-  "/:id",
+  "/:targetType/:targetId/:commentId",
   authMiddleware,
   updateCommentValidation,
   validationMiddleware,
@@ -69,15 +57,15 @@ commentRouter.patch(
 );
 
 commentRouter.delete(
-  "/:id",
+  "/:targetType/:targetId/:commentId",
   authMiddleware,
-  commentIdValidation,
+  commentIdParamValidation,
   validationMiddleware,
   deleteCommentController
 );
 
 commentRouter.post(
-  "/:id/reactions",
+  "/:targetType/:targetId/:commentId/reactions",
   authMiddleware,
   setCommentReactionValidation,
   validationMiddleware,
@@ -85,11 +73,18 @@ commentRouter.post(
 );
 
 commentRouter.delete(
-  "/:id/reactions",
+  "/:targetType/:targetId/:commentId/reactions",
   authMiddleware,
   removeCommentReactionValidation,
   validationMiddleware,
   removeCommentReactionController
+);
+
+commentRouter.get(
+  "/:targetType/:targetId/:commentId/reactions",
+  commentIdParamValidation,
+  validationMiddleware,
+  getCommentReactionCountsController
 );
 
 export default commentRouter;

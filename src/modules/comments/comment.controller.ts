@@ -9,7 +9,31 @@ import {
   removeCommentReactionService,
   getCommentReactionCountsService,
 } from "./comment.service.js";
+import AppError from "../../utils/AppError.js";
 import type { CommentableType } from "@prisma/client";
+
+const getTargetParams = (req: Request) => {
+  const { targetType, targetId } = req.params;
+
+  if (typeof targetType !== "string" || typeof targetId !== "string") {
+    throw new AppError("Invalid target", 400);
+  }
+
+  return {
+    targetType: targetType.toUpperCase() as CommentableType,
+    targetId,
+  };
+};
+
+const getCommentId = (req: Request) => {
+  const { commentId } = req.params;
+
+  if (typeof commentId !== "string") {
+    throw new AppError("Invalid comment ID", 400);
+  }
+
+  return commentId;
+};
 
 export const createCommentController = async (
   req: Request,
@@ -18,7 +42,13 @@ export const createCommentController = async (
 ) => {
   try {
     const userId = res.locals.userId as string;
-    const comment = await createCommentService(userId, req.body);
+    const { targetType, targetId } = getTargetParams(req);
+
+    const comment = await createCommentService(userId, {
+      ...req.body,
+      targetType,
+      targetId,
+    });
 
     res.status(201).json({
       success: true,
@@ -38,10 +68,11 @@ export const getCommentsController = async (
   try {
     const viewerId = res.locals.userId as string | undefined;
     const viewerRole = res.locals.role as string | undefined;
+    const { targetType, targetId } = getTargetParams(req);
 
     const result = await getCommentsService({
-      targetType: req.query.targetType as CommentableType,
-      targetId: req.query.targetId as string,
+      targetType,
+      targetId,
       page: Number(req.query.page ?? 1),
       limit: Number(req.query.limit ?? 10),
       viewerId,
@@ -65,10 +96,10 @@ export const getCommentRepliesController = async (
   try {
     const viewerId = res.locals.userId as string | undefined;
     const viewerRole = res.locals.role as string | undefined;
-    const { id } = req.params;
+    const commentId = getCommentId(req);
 
     const replies = await getCommentRepliesService(
-      id as string,
+      commentId,
       viewerId,
       viewerRole
     );
@@ -89,10 +120,10 @@ export const updateCommentController = async (
 ) => {
   try {
     const userId = res.locals.userId as string;
-    const { id } = req.params;
+    const commentId = getCommentId(req);
     const { content } = req.body;
 
-    const comment = await updateCommentService(userId, id as string, content);
+    const comment = await updateCommentService(userId, commentId, content);
 
     res.status(200).json({
       success: true,
@@ -111,9 +142,9 @@ export const deleteCommentController = async (
 ) => {
   try {
     const userId = res.locals.userId as string;
-    const { id } = req.params;
+    const commentId = getCommentId(req);
 
-    const result = await deleteCommentService(userId, id as string);
+    const result = await deleteCommentService(userId, commentId);
 
     res.status(200).json({
       success: true,
@@ -132,12 +163,12 @@ export const setCommentReactionController = async (
 ) => {
   try {
     const userId = res.locals.userId as string;
-    const { id } = req.params;
+    const commentId = getCommentId(req);
     const { type } = req.body;
 
     const reaction = await setCommentReactionService({
       userId,
-      commentId: id as string,
+      commentId,
       type,
     });
 
@@ -158,11 +189,11 @@ export const removeCommentReactionController = async (
 ) => {
   try {
     const userId = res.locals.userId as string;
-    const { id } = req.params;
+    const commentId = getCommentId(req);
 
     const result = await removeCommentReactionService({
       userId,
-      commentId: id as string,
+      commentId,
     });
 
     res.status(200).json({
@@ -181,8 +212,8 @@ export const getCommentReactionCountsController = async (
   next: NextFunction
 ) => {
   try {
-    const { id } = req.params;
-    const counts = await getCommentReactionCountsService(id as string);
+    const commentId = getCommentId(req);
+    const counts = await getCommentReactionCountsService(commentId);
 
     res.status(200).json({
       success: true,

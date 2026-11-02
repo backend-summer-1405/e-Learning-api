@@ -38,6 +38,7 @@ export type CommentResponse = {
   targetType: CommentableType;
   status: CommentStatus;
   rejectionReason: string | null;
+  timestamp: number | null;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;

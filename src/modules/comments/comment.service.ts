@@ -15,8 +15,6 @@ import {
 } from "./comment.repository.js";
 import type { CreateCommentInput } from "./comment.types.js";
 import type { CommentableType } from "@prisma/client";
-import { createNotificationService } from "../notifications/notification.service.js";
-import { clearCommentCache } from "../../utils/cache.utils.js";
 
 const assertTargetExists = async (
   targetType: CommentableType,
@@ -25,43 +23,28 @@ const assertTargetExists = async (
   switch (targetType) {
     case "NEWS": {
       const news = await prisma.news.findUnique({
-        where: {
-          id: targetId
-        },
-        select: {
-          id: true
-        },
+        where: { id: targetId },
+        select: { id: true },
       });
       if (!news) throw new AppError("News not found", 404);
       break;
     }
-
     case "COURSE": {
       const course = await prisma.course.findUnique({
-        where: {
-          id: targetId
-        },
-        select: {
-          id: true
-        },
+        where: { id: targetId },
+        select: { id: true },
       });
       if (!course) throw new AppError("Course not found", 404);
       break;
     }
     case "PODCAST": {
       const podcast = await prisma.podcast.findUnique({
-        where: {
-          id: targetId
-        },
-        select: {
-          id: true
-        },
+        where: { id: targetId },
+        select: { id: true },
       });
       if (!podcast) throw new AppError("Podcast not found", 404);
       break;
     }
-
-
     default:
       throw new AppError("Invalid target type", 400);
   }
@@ -114,34 +97,13 @@ export const createCommentService = async (
       timestamp: data.targetType === "PODCAST" ? data.timestamp : null,
     });
 
-
-    if (data.parentId) {
-      const parent = await findCommentById(data.parentId);
-      if (parent && parent.userId !== userId) {
-        await createNotificationService({
-          userId: parent.userId,
-          type: "COMMENT_REPLY",
-          title: "پاسخ جدید به کامنتت",
-          message: "کسی به کامنتت پاسخ داد",
-          data: {
-            commentId: createdComment.id,
-            parentId: data.parentId,
-            targetType: data.targetType,
-            targetId: data.targetId,
-          },
-        });
-      }
-    }
-
-    // update podcast commentcount
+    // ★ آپدیت Podcast.commentCount
     if (data.targetType === "PODCAST") {
       await prisma.podcast.update({
         where: { id: data.targetId },
         data: { commentCount: { increment: 1 } },
       });
     }
-
-    await clearCommentCache()
 
     return createdComment;
   } catch (error) {
@@ -242,12 +204,7 @@ export const updateCommentService = async (
       throw new AppError("Cannot edit a deleted comment", 400);
     }
 
-    const updated = await updateComment(commentId, content.trim());
-
-    await clearCommentCache();
-
-    return updated;
-
+    return await updateComment(commentId, content.trim());
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -274,22 +231,16 @@ export const deleteCommentService = async (
     }
 
     await softDeleteComment(commentId);
-    await clearCommentCache();
 
-    //  updaste podcast comment Count
+    // ★ آپدیت Podcast.commentCount
     if (comment.targetType === "PODCAST") {
       await prisma.podcast.update({
         where: { id: comment.targetId },
-        data: {
-          commentCount: {
-            decrement: 1
-          }
-        },
+        data: { commentCount: { decrement: 1 } },
       });
     }
 
     return { success: true };
-
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw error;
@@ -327,11 +278,16 @@ export const setCommentReactionService = async (data: {
 
     const result = await setCommentReaction(data);
 
+    // ★ Notification برای LIKE (فقط بار اول)
     if (
       data.type === "LIKE" &&
       !existingReaction &&
       comment.userId !== data.userId
     ) {
+      const { createNotificationService } = await import(
+        "../notifications/notification.service.js"
+      );
+
       await createNotificationService({
         userId: comment.userId,
         type: "COMMENT_LIKE",
@@ -368,8 +324,6 @@ export const removeCommentReactionService = async (data: {
     if (result.count === 0) {
       throw new AppError("Reaction not found", 404);
     }
-
-    await clearCommentCache();
 
     return { success: true };
   } catch (error) {

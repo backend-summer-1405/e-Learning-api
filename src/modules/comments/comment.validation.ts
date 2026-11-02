@@ -6,7 +6,28 @@ const VALID_REACTION_TYPES = ["LIKE", "DISLIKE"];
 const normalizeUpper = (value: unknown) =>
   typeof value === "string" ? value.toUpperCase() : value;
 
+export const targetParamsValidation = [
+  param("targetType")
+    .customSanitizer(normalizeUpper)
+    .isIn(VALID_TARGET_TYPES)
+    .withMessage(`targetType must be one of: ${VALID_TARGET_TYPES.join(", ")}`),
+
+  param("targetId")
+    .isString()
+    .withMessage("targetId must be a string")
+    .notEmpty()
+    .withMessage("targetId is required"),
+];
+
+export const commentIdParamValidation = [
+  param("commentId")
+    .isUUID()
+    .withMessage("Invalid comment ID"),
+];
+
 export const createCommentValidation = [
+  ...targetParamsValidation,
+
   body("content")
     .isString()
     .withMessage("Content must be a string")
@@ -15,17 +36,6 @@ export const createCommentValidation = [
     .withMessage("Content is required")
     .isLength({ max: 2000 })
     .withMessage("Content must not exceed 2000 characters"),
-
-  body("targetType")
-    .customSanitizer(normalizeUpper)
-    .isIn(VALID_TARGET_TYPES)
-    .withMessage(`targetType must be one of: ${VALID_TARGET_TYPES.join(", ")}`),
-
-  body("targetId")
-    .isString()
-    .withMessage("targetId must be a string")
-    .notEmpty()
-    .withMessage("targetId is required"),
 
   body("parentId")
     .optional({ nullable: true })
@@ -40,16 +50,7 @@ export const createCommentValidation = [
 ];
 
 export const getCommentsValidation = [
-  query("targetType")
-    .customSanitizer(normalizeUpper)
-    .isIn(VALID_TARGET_TYPES)
-    .withMessage(`targetType must be one of: ${VALID_TARGET_TYPES.join(", ")}`),
-
-  query("targetId")
-    .isString()
-    .withMessage("targetId must be a string")
-    .notEmpty()
-    .withMessage("targetId is required"),
+  ...targetParamsValidation,
 
   query("page")
     .optional()
@@ -64,12 +65,9 @@ export const getCommentsValidation = [
     .toInt(),
 ];
 
-export const commentIdValidation = [
-  param("id").isUUID().withMessage("Invalid comment ID"),
-];
-
 export const updateCommentValidation = [
-  ...commentIdValidation,
+  ...targetParamsValidation,
+  ...commentIdParamValidation,
 
   body("content")
     .isString()
@@ -82,7 +80,8 @@ export const updateCommentValidation = [
 ];
 
 export const setCommentReactionValidation = [
-  ...commentIdValidation,
+  ...targetParamsValidation,
+  ...commentIdParamValidation,
 
   body("type")
     .customSanitizer(normalizeUpper)
@@ -90,4 +89,12 @@ export const setCommentReactionValidation = [
     .withMessage(`type must be one of: ${VALID_REACTION_TYPES.join(", ")}`),
 ];
 
-export const removeCommentReactionValidation = [...commentIdValidation];
+export const removeCommentReactionValidation = [
+  ...targetParamsValidation,
+  ...commentIdParamValidation,
+];
+
+export const getCommentRepliesValidation = [
+  ...targetParamsValidation,
+  ...commentIdParamValidation,
+];

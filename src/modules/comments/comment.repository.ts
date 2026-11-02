@@ -7,9 +7,7 @@ export const findCommentById = async (id: string) => {
     where: { id },
     include: {
       user: {
-        select: {
-          id: true, name: true, avatarUrl: true
-        },
+        select: { id: true, name: true, avatarUrl: true },
       },
     },
   });
