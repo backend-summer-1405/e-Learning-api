@@ -18,7 +18,7 @@ export const findUserById = async (
       name: true,
       email: true,
       role: true,
-      avatarUrl: true, 
+      avatarUrl: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -62,15 +62,28 @@ export const updateUser = async (
   });
 };
 
-export const deleteUser = async (userId : string) => {
+export const countUserCourses = async (userId: string) => {
+  return prisma.course.count({
+    where: {
+      teacherId: userId
+    },
+  });
+};
+
+export const countUserPodcasts = async (userId: string) => {
+  return prisma.podcast.count({
+    where: {
+      teacherId: userId
+
+    },
+  });
+};
+
+export const deleteUser = async (userId: string) => {
   return prisma.user.delete({
-    where : {
-      id : userId,
-    }
-
-  })
-}
-
+    where: { id: userId },
+  });
+};
 export const findUserPasswordById = async (
   userId: string
 ) => {

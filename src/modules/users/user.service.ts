@@ -10,7 +10,10 @@ import {
   findUserPasswordById,
   updateUserPassword,
   deleteUser,
+  countUserPodcasts,
+  countUserCourses,
 } from "./user.repository.js";
+import prisma from "../../config/prisma.js";
 
 export const createUserService = async (data: {
   name: string;
@@ -118,6 +121,26 @@ export const deleteMeService = async (userId: string) => {
     if (!user) {
       throw new AppError("User not found", 404);
     }
+
+    const coursesCount = await countUserCourses(userId);
+
+    if (coursesCount > 0) {
+      throw new AppError(
+        `You have ${coursesCount} course(s). Please delete them first or contact support.`,
+        400
+      );
+    }
+
+    const podcastsCount = await countUserPodcasts(userId);
+
+    if (podcastsCount > 0) {
+      throw new AppError(
+        `You have ${podcastsCount} podcast(s). Please delete them first or contact support.`,
+        400
+      );
+    }
+    
+
     if (user.avatarUrl) {
       const filePath = path.resolve(user.avatarUrl.replace(/^\//, ""));
       try {
