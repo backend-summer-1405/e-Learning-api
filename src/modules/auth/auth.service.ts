@@ -207,8 +207,11 @@ export const forgotPasswordService = async (email: string) => {
 
     try {
       await sendPasswordResetEmail(user.email, resetLink);
+      console.log("✅ Email sent successfully");
     } catch (error) {
-      console.error("Failed to send reset email:", error);
+      // console.error("Failed to send reset email:", error);
+      console.error("Email error:", error);
+      throw error;
     }
 
     return { success: true };
