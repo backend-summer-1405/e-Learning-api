@@ -19,7 +19,9 @@ export const createNews = (data: CreateNewsInput, imageUrl?: string) => {
 
 export const findAllNews = () => {
   return prisma.news.findMany({
-    include: { images: true },
+    include: {
+      images: true
+    },
     orderBy: { createdAt: "desc" },
   });
 };

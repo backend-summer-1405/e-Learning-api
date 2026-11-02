@@ -57,14 +57,24 @@ newsRouter.get(
 );
 
 // by Admin routes
+// newsRouter.post(
+//   "/",
+//   authMiddleware,
+//   adminMiddleware,
+//   newsImageUpload.single("image"),
+//   createNewsValidation,
+//   validationMiddleware,
+//   createNewsController,
+// );
+
 newsRouter.post(
-  "/",
+  "/:id/images",
   authMiddleware,
   adminMiddleware,
-  newsImageUpload.single("image"),
-  createNewsValidation,
+  newsIdValidation,
+  newsImageUpload.array("images", 10),
   validationMiddleware,
-  createNewsController,
+  addNewsImagesController
 );
 
 newsRouter.patch(
